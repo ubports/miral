@@ -19,6 +19,7 @@
 #include "basic_window_manager.h"
 #include "miral/window_manager_tools.h"
 #include "miral/workspace_policy.h"
+#include "miral/window_management_policy_1_4.h"
 
 #include <mir/scene/session.h>
 #include <mir/scene/surface.h>
@@ -70,7 +71,6 @@ miral::BasicWindowManager::Locker::Locker(BasicWindowManager* self) :
 
 namespace
 {
-
 auto find_workspace_policy(std::unique_ptr<miral::WindowManagementPolicy> const& policy) -> miral::WorkspacePolicy*
 {
     miral::WorkspacePolicy* result = dynamic_cast<miral::WorkspacePolicy*>(policy.get());
@@ -79,6 +79,22 @@ auto find_workspace_policy(std::unique_ptr<miral::WindowManagementPolicy> const&
         return result;
 
     static miral::WorkspacePolicy null_workspace_policy;
+
+    return &null_workspace_policy;
+}
+
+auto find_1_4_policy(std::unique_ptr<miral::WindowManagementPolicy> const& policy) -> miral::WindowManagementPolicy_1_4*
+{
+    miral::WindowManagementPolicy_1_4* result = dynamic_cast<miral::WindowManagementPolicy_1_4*>(policy.get());
+
+    if (result)
+        return result;
+
+    struct NullWindowManagementPolicy_1_4 : miral::WindowManagementPolicy_1_4
+    {
+        void handle_request_drag_and_drop(miral::WindowInfo&) override {}
+    };
+    static NullWindowManagementPolicy_1_4 null_workspace_policy;
 
     return &null_workspace_policy;
 }
@@ -94,7 +110,8 @@ miral::BasicWindowManager::BasicWindowManager(
     display_layout(display_layout),
     persistent_surface_store{persistent_surface_store},
     policy(build(WindowManagerTools{this})),
-    workspace_policy{find_workspace_policy(policy)}
+    workspace_policy{find_workspace_policy(policy)},
+    policy_1_4{find_1_4_policy(policy)}
 {
 }
 
@@ -362,10 +379,12 @@ void miral::BasicWindowManager::handle_raise_surface(
 #if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 27, 0)
 void miral::BasicWindowManager::handle_request_drag_and_drop(
     std::shared_ptr<mir::scene::Session> const& /*session*/,
-    std::shared_ptr<mir::scene::Surface> const& /*surface*/,
-    uint64_t /*timestamp*/)
+    std::shared_ptr<mir::scene::Surface> const& surface,
+    uint64_t timestamp)
 {
-    // TODO
+    Locker lock{this};
+    if (timestamp >= last_input_event_timestamp)
+        policy_1_4->handle_request_drag_and_drop(info_for(surface));
 }
 #endif
 

@@ -42,6 +42,7 @@ include_directories(
 add_executable(miral-test
     mru_window_list.cpp
     active_outputs.cpp
+    drag_and_drop.cpp
     window_id.cpp
     runner.cpp
     select_active_window.cpp
@@ -56,7 +57,8 @@ add_executable(miral-test
     display_reconfiguration.cpp
     active_window.cpp
     raise_tree.cpp
-    workspaces.cpp)
+    workspaces.cpp
+)
 
 target_link_libraries(miral-test
     ${MIRTEST_LDFLAGS}

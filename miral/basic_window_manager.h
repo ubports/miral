@@ -46,6 +46,7 @@ namespace shell { class DisplayLayout; class PersistentSurfaceStore; }
 namespace miral
 {
 class WorkspacePolicy;
+class WindowManagementPolicy_1_4;
 using mir::shell::SurfaceSet;
 using WindowManagementPolicyBuilder =
     std::function<std::unique_ptr<miral::WindowManagementPolicy>(miral::WindowManagerTools const& tools)>;
@@ -190,6 +191,7 @@ private:
 
     std::unique_ptr<WindowManagementPolicy> const policy;
     WorkspacePolicy* const workspace_policy;
+    WindowManagementPolicy_1_4* const policy_1_4;
 
     std::mutex mutex;
     SessionInfoMap app_info;
