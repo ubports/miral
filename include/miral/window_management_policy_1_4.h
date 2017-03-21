@@ -19,8 +19,12 @@
 #ifndef MIRAL_WINDOW_MANAGEMENT_POLICY_1_4_H
 #define MIRAL_WINDOW_MANAGEMENT_POLICY_1_4_H
 
+#include <mir/version.h>
+
 namespace miral
 {
+class WindowInfo;
+
 /**
  *  Handle additional client requests.
  *

@@ -16,10 +16,13 @@
  * Authored by: Alan Griffiths <alan@octopull.co.uk>
  */
 
+#include <miral/window_management_policy_1_4.h>
+
 #include <mir/client/blob.h>
 #include <mir/client/cookie.h>
 #include <mir/client/window.h>
 #include <mir/client/window_spec.h>
+#include <mir_toolkit/mir_buffer_stream.h>
 #include <mir_toolkit/extensions/drag_and_drop.h>
 
 #include <mir/geometry/displacement.h>
@@ -37,10 +40,10 @@
 #include <gtest/gtest.h>
 
 #include <linux/input.h>
+#include <uuid/uuid.h>
 
 #include <boost/throw_exception.hpp>
 #include <atomic>
-#include <mir_toolkit/mir_buffer_stream.h>
 
 using namespace std::chrono_literals;
 using namespace mir::client;
@@ -144,6 +147,7 @@ struct DragAndDrop : ConnectedClientWithAWindow,
     auto count_of_handles_when_moving_mouse() -> int;
 
 private:
+    auto build_window_manager_policy(miral::WindowManagerTools const& tools) -> std::unique_ptr<TestWindowManagerPolicy> override;
     void center_mouse();
     void paint_window(MirWindow* w);
     void set_window_event_handler(MirWindow* window, std::function<void(MirEvent const* event)> const& handler);
@@ -526,6 +530,27 @@ auto DragAndDrop::count_of_handles_when_moving_mouse() -> int
     reset_window_event_handler(window);
     reset_window_event_handler(target_window);
     return handles;
+}
+
+auto DragAndDrop::build_window_manager_policy(miral::WindowManagerTools const& tools) -> std::unique_ptr<TestWindowManagerPolicy>
+{
+    struct DnDWindowManagerPolicy : miral::TestServer::TestWindowManagerPolicy, miral::WindowManagementPolicy_1_4
+    {
+        using miral::TestServer::TestWindowManagerPolicy::TestWindowManagerPolicy;
+
+        void handle_request_drag_and_drop(miral::WindowInfo& window_info) override
+        {
+            uuid_t uuid;
+            uuid_generate(uuid);
+            std::vector<uint8_t> const handle{std::begin(uuid), std::end(uuid)};
+
+//            surface->start_drag_and_drop(handle);
+//            tools->set_drag_and_drop_handle(window_info, handle);
+            tools.start_drag_and_drop(window_info, handle);
+        }
+    };
+
+    return std::make_unique<DnDWindowManagerPolicy>(tools, *this);
 }
 
 MATCHER_P(BlobContentEq, p, "")

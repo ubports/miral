@@ -166,6 +166,13 @@ public:
     /// Raise window and all its children
     void raise_tree(Window const& root);
 
+    /** Start drag and drop
+     *
+     * @param window_info source window
+     * @param handle      drag handle
+     */
+    void start_drag_and_drop(WindowInfo& window_info, std::vector<uint8_t> const& handle);
+
     /// Apply modifications to a window
     void modify_window(WindowInfo& window_info, WindowSpecification const& modifications);
 

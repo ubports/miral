@@ -162,6 +162,7 @@ public:
     auto active_display() -> mir::geometry::Rectangle const override;
 
     void raise_tree(Window const& root) override;
+    void start_drag_and_drop(WindowInfo& window_info, std::vector<uint8_t> const& handle) override;
 
     void modify_window(WindowInfo& window_info, WindowSpecification const& modifications) override;
 

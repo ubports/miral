@@ -83,6 +83,9 @@ auto miral::WindowManagerTools::active_display() -> mir::geometry::Rectangle con
 void miral::WindowManagerTools::raise_tree(Window const& root)
 { tools->raise_tree(root); }
 
+void miral::WindowManagerTools::start_drag_and_drop(WindowInfo& window_info, std::vector<uint8_t> const& handle)
+{ tools->start_drag_and_drop(window_info, handle); }
+
 void miral::WindowManagerTools::modify_window(WindowInfo& window_info, WindowSpecification const& modifications)
 { tools->modify_window(window_info,modifications); }
 
