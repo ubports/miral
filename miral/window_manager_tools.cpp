@@ -86,6 +86,9 @@ void miral::WindowManagerTools::raise_tree(Window const& root)
 void miral::WindowManagerTools::start_drag_and_drop(WindowInfo& window_info, std::vector<uint8_t> const& handle)
 { tools->start_drag_and_drop(window_info, handle); }
 
+void miral::WindowManagerTools::end_drag_and_drop()
+{ tools->end_drag_and_drop(); }
+
 void miral::WindowManagerTools::modify_window(WindowInfo& window_info, WindowSpecification const& modifications)
 { tools->modify_window(window_info,modifications); }
 

@@ -635,7 +635,7 @@ TEST_F(DragAndDrop, after_drag_finishes_pointer_events_no_longer_contain_handle)
     client_requests_drag(cookie);
     handle_from_mouse_release();
 
-//    server.the_shell()->clear_drag_and_drop_handle(); TODO
+    invoke_tools([](miral::WindowManagerTools& tools) { tools.end_drag_and_drop(); });
 
     EXPECT_THAT(count_of_handles_when_moving_mouse(), Eq(0));
 }

@@ -766,6 +766,10 @@ void miral::BasicWindowManager::start_drag_and_drop(WindowInfo& window_info, std
     focus_controller->set_drag_and_drop_handle(handle);
 }
 
+void miral::BasicWindowManager::end_drag_and_drop()
+{
+    focus_controller->clear_drag_and_drop_handle();
+}
 
 void miral::BasicWindowManager::move_tree(miral::WindowInfo& root, mir::geometry::Displacement movement)
 {

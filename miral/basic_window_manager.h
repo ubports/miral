@@ -163,6 +163,7 @@ public:
 
     void raise_tree(Window const& root) override;
     void start_drag_and_drop(WindowInfo& window_info, std::vector<uint8_t> const& handle) override;
+    void end_drag_and_drop() override;
 
     void modify_window(WindowInfo& window_info, WindowSpecification const& modifications) override;
 

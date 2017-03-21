@@ -556,6 +556,15 @@ try {
 }
 MIRAL_TRACE_EXCEPTION
 
+void miral::WindowManagementTrace::end_drag_and_drop()
+try {
+    log_input();
+    mir::log_info("%s window_info=%s", __func__);
+    trace_count++;
+    wrapped.end_drag_and_drop();
+}
+MIRAL_TRACE_EXCEPTION
+
 void miral::WindowManagementTrace::modify_window(
     miral::WindowInfo& window_info, miral::WindowSpecification const& modifications)
 try {

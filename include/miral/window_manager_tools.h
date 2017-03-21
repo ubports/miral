@@ -173,6 +173,9 @@ public:
      */
     void start_drag_and_drop(WindowInfo& window_info, std::vector<uint8_t> const& handle);
 
+    /// End drag and drop
+    void end_drag_and_drop();
+
     /// Apply modifications to a window
     void modify_window(WindowInfo& window_info, WindowSpecification const& modifications);
 

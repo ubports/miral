@@ -408,6 +408,7 @@ global:
     miral::WindowManagementPolicy_1_4::?WindowManagementPolicy_1_4*;
     miral::WindowManagementPolicy_1_4::WindowManagementPolicy_1_4*;
     miral::WindowManagementPolicy_1_4::operator*;
+    miral::WindowManagerTools::end_drag_and_drop*;
     miral::WindowManagerTools::start_drag_and_drop*;
     miral::toolkit::Window::Window*;
     non-virtual?thunk?to?miral::WindowManagementPolicy_1_4::?WindowManagementPolicy_1_4*;
