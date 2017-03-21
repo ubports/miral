@@ -18,6 +18,8 @@
 
 #include <mir/client/blob.h>
 #include <mir/client/cookie.h>
+#include <mir/client/window.h>
+#include <mir/client/window_spec.h>
 #include <mir_toolkit/extensions/drag_and_drop.h>
 
 #include <mir/geometry/displacement.h>
@@ -25,7 +27,7 @@
 #include <mir/input/device_capability.h>
 #include <mir/shell/shell.h>
 
-#include <mir_test_framework/connected_client_with_a_window.h>
+#include "test_server.h"
 #include <mir_test_framework/fake_input_device.h>
 #include <mir_test_framework/stub_server_platform_factory.h>
 #include <mir/test/event_factory.h>
@@ -38,6 +40,7 @@
 
 #include <boost/throw_exception.hpp>
 #include <atomic>
+#include <mir_toolkit/mir_buffer_stream.h>
 
 using namespace std::chrono_literals;
 using namespace mir::client;
@@ -74,17 +77,44 @@ private:
 };
 
 Rectangle const screen_geometry{{0,0}, {800,600}};
-auto const receive_event_timeout = 90s;
+auto const receive_event_timeout = 1s; //90s;
 
-struct DragAndDrop : mir_test_framework::ConnectedClientWithAWindow,
+struct ConnectedClientWithAWindow : miral::TestServer
+{
+    Connection connection;
+    Window window;
+
+    void SetUp() override
+    {
+        miral::TestServer::SetUp();
+        connection = connect_client(__func__);
+        window = WindowSpec::for_normal_window(connection, surface_size.width.as_int(), surface_size.height.as_int())
+            .set_pixel_format(mir_pixel_format_abgr_8888)
+            .set_name("ConnectedClientWithAWindow")
+            .set_buffer_usage(mir_buffer_usage_hardware)
+            .create_window();
+    }
+
+    void TearDown() override
+    {
+        window.reset();
+        connection.reset();
+        miral::TestServer::TearDown();
+    }
+
+    mir::geometry::Size const surface_size {640, 480};
+};
+
+struct DragAndDrop : ConnectedClientWithAWindow,
                      MouseMoverAndFaker
 {
     MirDragAndDropV1 const* dnd = nullptr;
 
     void SetUp() override
     {
-        initial_display_layout({screen_geometry});
-        mir_test_framework::ConnectedClientWithAWindow::SetUp();
+        mir_test_framework::set_next_display_rects(std::unique_ptr<std::vector<Rectangle>>(new std::vector<Rectangle>({screen_geometry})));
+
+        ConnectedClientWithAWindow::SetUp();
         dnd = mir_drag_and_drop_v1(connection);
         mir_window_set_event_handler(window, &window_event_handler, this);
         if (dnd) dnd->set_start_drag_and_drop_callback(window, &window_dnd_start_handler, this);
@@ -100,9 +130,9 @@ struct DragAndDrop : mir_test_framework::ConnectedClientWithAWindow,
     {
         reset_window_event_handler(target_window);
         reset_window_event_handler(window);
-        mir_window_release_sync(target_window);
-        mir_connection_release(another_connection);
-        mir_test_framework::ConnectedClientWithAWindow::TearDown();
+        target_window.reset();
+        another_connection.reset();
+        ConnectedClientWithAWindow::TearDown();
     }
 
     auto user_initiates_drag() -> Cookie;
@@ -122,16 +152,14 @@ private:
 
     void create_target_window()
     {
-        another_connection = mir_connect_sync(new_connection().c_str(), "another_connection");
-        auto const spec = mir_create_normal_window_spec(
-            connection, screen_geometry.size.width.as_int(), screen_geometry.size.height.as_int());
-        mir_window_spec_set_pixel_format(spec, mir_pixel_format_abgr_8888);
-        mir_window_spec_set_name(spec, "target_window");
-        mir_window_spec_set_buffer_usage(spec, mir_buffer_usage_hardware);
-        mir_window_spec_set_event_handler(spec, &window_event_handler, this);
-
-        target_window = mir_create_window_sync(spec);
-        mir_window_spec_release(spec);
+        another_connection = connect_client("another_connection");
+        target_window = WindowSpec::
+            for_normal_window(connection, screen_geometry.size.width.as_int(), screen_geometry.size.height.as_int())
+            .set_pixel_format(mir_pixel_format_abgr_8888)
+        .set_name("target_window")
+        .set_buffer_usage(mir_buffer_usage_hardware)
+        .set_event_handler(&window_event_handler, this)
+        .create_window();
 
         paint_window(target_window);
     }
@@ -157,8 +185,8 @@ private:
     static void window_event_handler(MirWindow* window, MirEvent const* event, void* context);
     static void window_dnd_start_handler(MirWindow* window, MirDragAndDropEvent const* event, void* context);
 
-    MirConnection* another_connection{nullptr};
-    MirWindow*     target_window{nullptr};
+    Connection another_connection;
+    Window     target_window;
 };
 
 void DragAndDrop::set_window_event_handler(MirWindow* window, std::function<void(MirEvent const* event)> const& handler)
@@ -582,7 +610,7 @@ TEST_F(DragAndDrop, after_drag_finishes_pointer_events_no_longer_contain_handle)
     client_requests_drag(cookie);
     handle_from_mouse_release();
 
-    server.the_shell()->clear_drag_and_drop_handle();
+//    server.the_shell()->clear_drag_and_drop_handle(); TODO
 
     EXPECT_THAT(count_of_handles_when_moving_mouse(), Eq(0));
 }
