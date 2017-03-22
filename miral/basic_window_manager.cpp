@@ -83,18 +83,18 @@ auto find_workspace_policy(std::unique_ptr<miral::WindowManagementPolicy> const&
     return &null_workspace_policy;
 }
 
-auto find_1_4_policy(std::unique_ptr<miral::WindowManagementPolicy> const& policy) -> miral::WindowManagementPolicyAddendum2*
+auto find_policy_addendum2(std::unique_ptr<miral::WindowManagementPolicy> const& policy) -> miral::WindowManagementPolicyAddendum2*
 {
     miral::WindowManagementPolicyAddendum2* result = dynamic_cast<miral::WindowManagementPolicyAddendum2*>(policy.get());
 
     if (result)
         return result;
 
-    struct NullWindowManagementPolicy_1_4 : miral::WindowManagementPolicyAddendum2
+    struct NullWindowManagementPolicyAddendum2 : miral::WindowManagementPolicyAddendum2
     {
         void handle_request_drag_and_drop(miral::WindowInfo&) override {}
     };
-    static NullWindowManagementPolicy_1_4 null_workspace_policy;
+    static NullWindowManagementPolicyAddendum2 null_workspace_policy;
 
     return &null_workspace_policy;
 }
@@ -111,7 +111,7 @@ miral::BasicWindowManager::BasicWindowManager(
     persistent_surface_store{persistent_surface_store},
     policy(build(WindowManagerTools{this})),
     workspace_policy{find_workspace_policy(policy)},
-    policy_1_4{find_1_4_policy(policy)}
+    policy_1_4{find_policy_addendum2(policy)}
 {
 }
 
