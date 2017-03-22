@@ -19,7 +19,7 @@
 #include "basic_window_manager.h"
 #include "miral/window_manager_tools.h"
 #include "miral/workspace_policy.h"
-#include "miral/window_management_policy_1_4.h"
+#include "miral/window_management_policy_addendum2.h"
 
 #include <mir/scene/session.h>
 #include <mir/scene/surface.h>
@@ -83,14 +83,14 @@ auto find_workspace_policy(std::unique_ptr<miral::WindowManagementPolicy> const&
     return &null_workspace_policy;
 }
 
-auto find_1_4_policy(std::unique_ptr<miral::WindowManagementPolicy> const& policy) -> miral::WindowManagementPolicy_1_4*
+auto find_1_4_policy(std::unique_ptr<miral::WindowManagementPolicy> const& policy) -> miral::WindowManagementPolicyAddendum2*
 {
-    miral::WindowManagementPolicy_1_4* result = dynamic_cast<miral::WindowManagementPolicy_1_4*>(policy.get());
+    miral::WindowManagementPolicyAddendum2* result = dynamic_cast<miral::WindowManagementPolicyAddendum2*>(policy.get());
 
     if (result)
         return result;
 
-    struct NullWindowManagementPolicy_1_4 : miral::WindowManagementPolicy_1_4
+    struct NullWindowManagementPolicy_1_4 : miral::WindowManagementPolicyAddendum2
     {
         void handle_request_drag_and_drop(miral::WindowInfo&) override {}
     };

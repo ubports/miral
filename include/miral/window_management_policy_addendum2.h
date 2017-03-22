@@ -16,8 +16,8 @@
  * Authored by: Alan Griffiths <alan@octopull.co.uk>
  */
 
-#ifndef MIRAL_WINDOW_MANAGEMENT_POLICY_1_4_H
-#define MIRAL_WINDOW_MANAGEMENT_POLICY_1_4_H
+#ifndef MIRAL_WINDOW_MANAGEMENT_ADDENDUM2_H
+#define MIRAL_WINDOW_MANAGEMENT_ADDENDUM2_H
 
 #include <mir/version.h>
 
@@ -34,7 +34,7 @@ class WindowInfo;
  *  When initializing the window manager this interface will be detected by
  *  dynamic_cast and registered accordingly.
  */
-class WindowManagementPolicy_1_4
+class WindowManagementPolicyAddendum2
 {
 public:
 /** @name handle requests originating from the client
@@ -48,14 +48,14 @@ public:
     virtual void handle_request_drag_and_drop(WindowInfo& window_info) = 0;
 /** @} */
 
-    virtual ~WindowManagementPolicy_1_4() = default;
-    WindowManagementPolicy_1_4() = default;
-    WindowManagementPolicy_1_4(WindowManagementPolicy_1_4 const&) = delete;
-    WindowManagementPolicy_1_4& operator=(WindowManagementPolicy_1_4 const&) = delete;
+    virtual ~WindowManagementPolicyAddendum2() = default;
+    WindowManagementPolicyAddendum2() = default;
+    WindowManagementPolicyAddendum2(WindowManagementPolicyAddendum2 const&) = delete;
+    WindowManagementPolicyAddendum2& operator=(WindowManagementPolicyAddendum2 const&) = delete;
 };
 #if MIRAL_VERSION >= MIR_VERSION_NUMBER(2, 0, 0)
 #error "We've presumably broken ABI - please roll this interface into WindowManagementPolicy"
 #endif
 }
 
-#endif //MIRAL_WINDOW_MANAGEMENT_POLICY_1_4_H
+#endif //MIRAL_WINDOW_MANAGEMENT_ADDENDUM2_H
