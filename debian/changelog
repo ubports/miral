@@ -3,6 +3,12 @@ miral (1.4.0) UNRELEASED; urgency=medium
   * New upstream release 1.4.0 (https://launchpad.net/miral/+milestone/1.4.0)
     - ABI summary:
       . miral ABI unchanged at 2
+    - Enhancements:
+      . Support for passing messages to enable Drag & Drop
+      . [miral-shell] Add a keyboard shortcut for forcing fullscreen
+    - Bugs fixed:
+      . [libmiral] correct spelling of miral/set_window_management_policy.h
+      . [libmiral] Fix FTBFS against Mir < 0.26 (Xenial, Yakkety)
 
  -- Alan Griffiths <alan@Octopull-X1c3>  Tue, 21 Mar 2017 17:57:20 +0000
 
