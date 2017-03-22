@@ -111,7 +111,7 @@ miral::BasicWindowManager::BasicWindowManager(
     persistent_surface_store{persistent_surface_store},
     policy(build(WindowManagerTools{this})),
     workspace_policy{find_workspace_policy(policy)},
-    policy_1_4{find_policy_addendum2(policy)}
+    policy2{find_policy_addendum2(policy)}
 {
 }
 
@@ -384,7 +384,7 @@ void miral::BasicWindowManager::handle_request_drag_and_drop(
 {
     Locker lock{this};
     if (timestamp >= last_input_event_timestamp)
-        policy_1_4->handle_request_drag_and_drop(info_for(surface));
+        policy2->handle_request_drag_and_drop(info_for(surface));
 }
 #endif
 
