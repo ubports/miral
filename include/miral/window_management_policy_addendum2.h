@@ -23,7 +23,7 @@
 
 namespace miral
 {
-class WindowInfo;
+struct WindowInfo;
 
 /**
  *  Handle additional client requests.
