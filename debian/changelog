@@ -1,4 +1,34 @@
-miral (1.3.1) UNRELEASED; urgency=medium
+miral (1.4.0) UNRELEASED; urgency=medium
+
+  * New upstream release 1.4.0 (https://launchpad.net/miral/+milestone/1.4.0)
+    - ABI summary:
+      . miral ABI unchanged at 2
+    - Enhancements:
+      . Support for passing messages to enable Drag & Drop
+    - Bugs fixed:
+
+ -- Alan Griffiths <alan@Octopull-X1c3>  Tue, 21 Mar 2017 17:57:20 +0000
+
+miral (1.3.2) UNRELEASED; urgency=medium
+
+  * New upstream release 1.3.2 (https://launchpad.net/miral/+milestone/1.3.2)
+    - ABI summary:
+      . miral ABI unchanged at 2
+    - Enhancements:
+      . [miral-shell] Add a keyboard shortcut for forcing fullscreen
+    - Bugs fixed:
+      . [miral-examples] With latest zesty's libstdc++-6-dev miral-shell will
+        crash when trying to draw its background text. (LP: #1677550)
+      . [miral-examples] Update miral-xrun to match GDK changes (LP: #1675115)
+      . [miral-examples] change the server and client launch scripts to avoid
+        using the default Mir socket (LP: #1675794)
+      . [libmiral] Fix FTBFS against Mir < 0.26 (Xenial, Yakkety)
+      . [libmiral] correct spelling of miral/set_window_management_policy.h
+      . Update to fix FTBFS against lp:mir (and clang)
+
+ -- Alan Griffiths <alan.griffiths@canonical.com>  Mon, 24 Mar 2017 10:00:20 +0000
+
+miral (1.3.1+17.04.20170316.1-0ubuntu1) zesty; urgency=medium
 
   * New upstream release 1.3.1 (https://launchpad.net/miral/+milestone/1.3.1)
     - ABI summary:
@@ -14,7 +44,7 @@ miral (1.3.1) UNRELEASED; urgency=medium
       . [libmiral] When a dialog is hidden ensure that the active window focus
         goes to the parent. (LP: #1671072)
 
- -- Alan Griffiths <alan.griffiths@canonical.com>  Mon, 06 Mar 2017 10:00:20 +0000
+ -- Alan Griffiths <alan.griffiths@canonical.com>  Thu, 16 Mar 2017 18:17:41 +0000
 
 miral (1.3.0+17.04.20170303-0ubuntu1) zesty; urgency=medium
 
@@ -55,11 +85,11 @@ miral (1.2.0+17.04.20170215.1-0ubuntu1) zesty; urgency=medium
       . Chrome-less shell hint does not work any more (LP: #1658117)
       . WindowSpec::set_state() wrapper for mir_window_spec_set_state()
         (LP: #1661256)
-      . "$ miral-app -kiosk" fails with "Unknown command line options: 
+      . "$ miral-app -kiosk" fails with "Unknown command line options:
         --desktop_file_hint=miral-shell.desktop" (LP: #1660933)
       . libmiral] Fix focus and movement rules for Input Method and Satellite
          windows. (LP: #1660691)
-      
+
 
  -- Alan Griffiths <alan.griffiths@canonical.com>  Wed, 15 Feb 2017 14:05:46 +0000
 

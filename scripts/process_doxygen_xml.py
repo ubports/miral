@@ -476,10 +476,21 @@ global:
 
 MIRAL_1.3.1 {
 global:
+  extern "C++" {
+    miral::SetWindowManagementPolicy::?SetWindowManagementPolicy*;
+    miral::SetWindowManagementPolicy::SetWindowManagementPolicy*;
+    miral::SetWindowManagementPolicy::operator*;
+    typeinfo?for?miral::SetWindowManagementPolicy;
+    vtable?for?miral::SetWindowManagementPolicy;
+  };
+} MIRAL_1.3;
+
+MIRAL_1.4.0 {
+global:
   extern "C++" {'''
 
 END_NEW_STANZA = '''  };
-} MIRAL_1.3;'''
+} MIRAL_1.3.1;'''
 
 def _print_report():
     print OLD_STANZAS
