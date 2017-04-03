@@ -367,6 +367,14 @@ void miral::BasicWindowManager::handle_request_drag_and_drop(
 {
     // TODO
 }
+
+void miral::BasicWindowManager::handle_request_move(
+    std::shared_ptr<mir::scene::Session> const& /*session*/,
+    std::shared_ptr<mir::scene::Surface> const& /*surface*/,
+    uint64_t /*timestamp*/)
+{
+    // TODO
+}
 #endif
 
 int miral::BasicWindowManager::set_surface_attribute(

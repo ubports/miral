@@ -101,6 +101,11 @@ public:
         std::shared_ptr<mir::scene::Session> const& session,
         std::shared_ptr<mir::scene::Surface> const& surface,
         uint64_t timestamp) override;
+
+    void handle_request_move(
+        std::shared_ptr<mir::scene::Session> const& session,
+        std::shared_ptr<mir::scene::Surface> const& surface,
+        uint64_t timestamp) override;
 #endif
 
     int set_surface_attribute(
