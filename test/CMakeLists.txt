@@ -43,7 +43,10 @@ include_directories(
 if (MIRTEST_VERSION VERSION_LESS 0.27)
     set(MIRAL_TEST_MODERN_FEATURES)
 else()
-    set(MIRAL_TEST_MODERN_FEATURES drag_and_drop.cpp)
+    set(MIRAL_TEST_MODERN_FEATURES
+        drag_and_drop.cpp
+        client_mediated_gestures.cpp
+    )
 endif()
 
 add_executable(miral-test
