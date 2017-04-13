@@ -19,6 +19,7 @@
 #include "basic_window_manager.h"
 #include "miral/window_manager_tools.h"
 #include "miral/workspace_policy.h"
+#include "miral/window_management_policy_addendum2.h"
 
 #include <mir/scene/session.h>
 #include <mir/scene/surface.h>
@@ -70,7 +71,6 @@ miral::BasicWindowManager::Locker::Locker(BasicWindowManager* self) :
 
 namespace
 {
-
 auto find_workspace_policy(std::unique_ptr<miral::WindowManagementPolicy> const& policy) -> miral::WorkspacePolicy*
 {
     miral::WorkspacePolicy* result = dynamic_cast<miral::WorkspacePolicy*>(policy.get());
@@ -79,6 +79,22 @@ auto find_workspace_policy(std::unique_ptr<miral::WindowManagementPolicy> const&
         return result;
 
     static miral::WorkspacePolicy null_workspace_policy;
+
+    return &null_workspace_policy;
+}
+
+auto find_policy_addendum2(std::unique_ptr<miral::WindowManagementPolicy> const& policy) -> miral::WindowManagementPolicyAddendum2*
+{
+    miral::WindowManagementPolicyAddendum2* result = dynamic_cast<miral::WindowManagementPolicyAddendum2*>(policy.get());
+
+    if (result)
+        return result;
+
+    struct NullWindowManagementPolicyAddendum2 : miral::WindowManagementPolicyAddendum2
+    {
+        void handle_request_drag_and_drop(miral::WindowInfo&) override {}
+    };
+    static NullWindowManagementPolicyAddendum2 null_workspace_policy;
 
     return &null_workspace_policy;
 }
@@ -94,7 +110,8 @@ miral::BasicWindowManager::BasicWindowManager(
     display_layout(display_layout),
     persistent_surface_store{persistent_surface_store},
     policy(build(WindowManagerTools{this})),
-    workspace_policy{find_workspace_policy(policy)}
+    workspace_policy{find_workspace_policy(policy)},
+    policy2{find_policy_addendum2(policy)}
 {
 }
 
@@ -362,10 +379,12 @@ void miral::BasicWindowManager::handle_raise_surface(
 #if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 27, 0)
 void miral::BasicWindowManager::handle_request_drag_and_drop(
     std::shared_ptr<mir::scene::Session> const& /*session*/,
-    std::shared_ptr<mir::scene::Surface> const& /*surface*/,
-    uint64_t /*timestamp*/)
+    std::shared_ptr<mir::scene::Surface> const& surface,
+    uint64_t timestamp)
 {
-    // TODO
+    Locker lock{this};
+    if (timestamp >= last_input_event_timestamp)
+        policy2->handle_request_drag_and_drop(info_for(surface));
 }
 #endif
 
@@ -739,6 +758,24 @@ void miral::BasicWindowManager::raise_tree(Window const& root)
 
     policy->advise_raise(windows);
     focus_controller->raise({begin(windows), end(windows)});
+}
+
+void miral::BasicWindowManager::start_drag_and_drop(WindowInfo& window_info, std::vector<uint8_t> const& handle)
+{
+#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 27, 0)
+    std::shared_ptr<scene::Surface>(window_info.window())->start_drag_and_drop(handle);
+    focus_controller->set_drag_and_drop_handle(handle);
+#else
+    (void)window_info;
+    (void)handle;
+#endif
+}
+
+void miral::BasicWindowManager::end_drag_and_drop()
+{
+#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 27, 0)
+    focus_controller->clear_drag_and_drop_handle();
+#endif
 }
 
 void miral::BasicWindowManager::move_tree(miral::WindowInfo& root, mir::geometry::Displacement movement)

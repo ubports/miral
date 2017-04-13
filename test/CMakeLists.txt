@@ -39,6 +39,13 @@ include_directories(
         ${GTEST_INCLUDE_DIR}
 )
 
+# MIRAL_TEST_MODERN_FEATURES lists test sourcefiles that require a recent version of Mir
+if (MIRTEST_VERSION VERSION_LESS 0.27)
+    set(MIRAL_TEST_MODERN_FEATURES)
+else()
+    set(MIRAL_TEST_MODERN_FEATURES drag_and_drop.cpp)
+endif()
+
 add_executable(miral-test
     mru_window_list.cpp
     active_outputs.cpp
@@ -56,7 +63,9 @@ add_executable(miral-test
     display_reconfiguration.cpp
     active_window.cpp
     raise_tree.cpp
-    workspaces.cpp)
+    workspaces.cpp
+    ${MIRAL_TEST_MODERN_FEATURES}
+)
 
 target_link_libraries(miral-test
     ${MIRTEST_LDFLAGS}

@@ -166,6 +166,18 @@ public:
     /// Raise window and all its children
     void raise_tree(Window const& root);
 
+    /** Start drag and drop. The handle will be passed to the client which can
+     * then use it to talk to the whatever service is being used to support drag
+     * and drop (e.g. on Ubuntu the content hub).
+     *
+     * @param window_info source window
+     * @param handle      drag handle
+     */
+    void start_drag_and_drop(WindowInfo& window_info, std::vector<uint8_t> const& handle);
+
+    /// End drag and drop
+    void end_drag_and_drop();
+
     /// Apply modifications to a window
     void modify_window(WindowInfo& window_info, WindowSpecification const& modifications);
 

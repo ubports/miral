@@ -46,6 +46,7 @@ namespace shell { class DisplayLayout; class PersistentSurfaceStore; }
 namespace miral
 {
 class WorkspacePolicy;
+class WindowManagementPolicyAddendum2;
 using mir::shell::SurfaceSet;
 using WindowManagementPolicyBuilder =
     std::function<std::unique_ptr<miral::WindowManagementPolicy>(miral::WindowManagerTools const& tools)>;
@@ -161,6 +162,8 @@ public:
     auto active_display() -> mir::geometry::Rectangle const override;
 
     void raise_tree(Window const& root) override;
+    void start_drag_and_drop(WindowInfo& window_info, std::vector<uint8_t> const& handle) override;
+    void end_drag_and_drop() override;
 
     void modify_window(WindowInfo& window_info, WindowSpecification const& modifications) override;
 
@@ -190,6 +193,7 @@ private:
 
     std::unique_ptr<WindowManagementPolicy> const policy;
     WorkspacePolicy* const workspace_policy;
+    WindowManagementPolicyAddendum2* const policy2;
 
     std::mutex mutex;
     SessionInfoMap app_info;

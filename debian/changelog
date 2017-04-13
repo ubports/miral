@@ -1,3 +1,14 @@
+miral (1.4.0) UNRELEASED; urgency=medium
+
+  * New upstream release 1.4.0 (https://launchpad.net/miral/+milestone/1.4.0)
+    - ABI summary:
+      . miral ABI unchanged at 2
+    - Enhancements:
+      . Support for passing messages to enable Drag & Drop
+    - Bugs fixed:
+
+ -- Alan Griffiths <alan@Octopull-X1c3>  Tue, 21 Mar 2017 17:57:20 +0000
+
 miral (1.3.2+17.04.20170330.5-0ubuntu1) zesty; urgency=medium
 
   * New upstream release 1.3.2 (https://launchpad.net/miral/+milestone/1.3.2)
@@ -74,11 +85,11 @@ miral (1.2.0+17.04.20170215.1-0ubuntu1) zesty; urgency=medium
       . Chrome-less shell hint does not work any more (LP: #1658117)
       . WindowSpec::set_state() wrapper for mir_window_spec_set_state()
         (LP: #1661256)
-      . "$ miral-app -kiosk" fails with "Unknown command line options: 
+      . "$ miral-app -kiosk" fails with "Unknown command line options:
         --desktop_file_hint=miral-shell.desktop" (LP: #1660933)
       . libmiral] Fix focus and movement rules for Input Method and Satellite
          windows. (LP: #1660691)
-      
+
 
  -- Alan Griffiths <alan.griffiths@canonical.com>  Wed, 15 Feb 2017 14:05:46 +0000
 
