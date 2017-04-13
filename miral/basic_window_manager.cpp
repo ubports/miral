@@ -93,6 +93,7 @@ auto find_policy_addendum2(std::unique_ptr<miral::WindowManagementPolicy> const&
     struct NullWindowManagementPolicyAddendum2 : miral::WindowManagementPolicyAddendum2
     {
         void handle_request_drag_and_drop(miral::WindowInfo&) override {}
+        void handle_request_move(miral::WindowInfo&, MirInputEvent const*) override {}
     };
     static NullWindowManagementPolicyAddendum2 null_workspace_policy;
 
@@ -115,6 +116,13 @@ miral::BasicWindowManager::BasicWindowManager(
 {
 }
 
+miral::BasicWindowManager::~BasicWindowManager()
+{
+#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 27, 0)
+    if (last_input_event)
+        mir_event_unref(last_input_event);
+#endif
+}
 void miral::BasicWindowManager::add_session(std::shared_ptr<scene::Session> const& session)
 {
     Locker lock{this};
@@ -385,6 +393,18 @@ void miral::BasicWindowManager::handle_request_drag_and_drop(
     Locker lock{this};
     if (timestamp >= last_input_event_timestamp)
         policy2->handle_request_drag_and_drop(info_for(surface));
+}
+
+void miral::BasicWindowManager::handle_request_move(
+    std::shared_ptr<mir::scene::Session> const& /*session*/,
+    std::shared_ptr<mir::scene::Surface> const& surface,
+    uint64_t timestamp)
+{
+    std::lock_guard<decltype(mutex)> lock(mutex);
+    if (timestamp >= last_input_event_timestamp && last_input_event)
+    {
+        policy2->handle_request_move(info_for(surface), mir_event_get_input_event(last_input_event));
+    }
 }
 #endif
 
@@ -1200,25 +1220,22 @@ void miral::BasicWindowManager::set_state(miral::WindowInfo& window_info, MirWin
 
 void miral::BasicWindowManager::update_event_timestamp(MirKeyboardEvent const* kev)
 {
-    auto iev = mir_keyboard_event_input_event(kev);
-    last_input_event_timestamp = mir_input_event_get_event_time(iev);
+    update_event_timestamp(mir_keyboard_event_input_event(kev));
 }
 
 void miral::BasicWindowManager::update_event_timestamp(MirPointerEvent const* pev)
 {
-    auto iev = mir_pointer_event_input_event(pev);
     auto pointer_action = mir_pointer_event_action(pev);
 
     if (pointer_action == mir_pointer_action_button_up ||
         pointer_action == mir_pointer_action_button_down)
     {
-        last_input_event_timestamp = mir_input_event_get_event_time(iev);
+        update_event_timestamp(mir_pointer_event_input_event(pev));
     }
 }
 
 void miral::BasicWindowManager::update_event_timestamp(MirTouchEvent const* tev)
 {
-    auto iev = mir_touch_event_input_event(tev);
     auto touch_count = mir_touch_event_point_count(tev);
     for (unsigned i = 0; i < touch_count; i++)
     {
@@ -1226,10 +1243,20 @@ void miral::BasicWindowManager::update_event_timestamp(MirTouchEvent const* tev)
         if (touch_action == mir_touch_action_up ||
             touch_action == mir_touch_action_down)
         {
-            last_input_event_timestamp = mir_input_event_get_event_time(iev);
+            update_event_timestamp(mir_touch_event_input_event(tev));
             break;
         }
     }
+}
+
+void miral::BasicWindowManager::update_event_timestamp(MirInputEvent const* iev)
+{
+    last_input_event_timestamp = mir_input_event_get_event_time(iev);
+#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 27, 0)
+    if (last_input_event)
+        mir_event_unref(last_input_event);
+    last_input_event = mir_event_ref(mir_input_event_get_event(iev));
+#endif
 }
 
 void miral::BasicWindowManager::invoke_under_lock(std::function<void()> const& callback)

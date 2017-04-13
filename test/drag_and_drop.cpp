@@ -546,6 +546,8 @@ auto DragAndDrop::build_window_manager_policy(miral::WindowManagerTools const& t
 
             tools.start_drag_and_drop(window_info, handle);
         }
+
+        void handle_request_move(miral::WindowInfo&, MirInputEvent const*) override {}
     };
 
     return std::make_unique<DnDWindowManagerPolicy>(tools, *this);
