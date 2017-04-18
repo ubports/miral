@@ -44,7 +44,7 @@ install(PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/miral-app
 add_executable(miral-shell
     shell_main.cpp
     tiling_window_manager.cpp   tiling_window_manager.h
-    titlebar_window_manager.cpp titlebar_window_manager.h
+        floating_window_manager.cpp floating_window_manager.h
     decoration_provider.cpp     decoration_provider.h
     titlebar_config.cpp         titlebar_config.h
 )
