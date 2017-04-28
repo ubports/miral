@@ -103,7 +103,7 @@ add_custom_target(check-symbols ALL
 )
 
 set(LIBDIR "${CMAKE_INSTALL_FULL_LIBDIR}")
-set(INCLUDEDIR "${miral_include}/miral")
+set(INCLUDEDIR "${CMAKE_INSTALL_PREFIX}/include/miral")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/miral.pc.in
     ${CMAKE_CURRENT_BINARY_DIR}/miral.pc
@@ -138,6 +138,6 @@ configure_file(
 )
 
 install(TARGETS     miral                           LIBRARY         DESTINATION "${CMAKE_INSTALL_FULL_LIBDIR}")
-install(DIRECTORY   ${miral_include}                    DESTINATION "${INCLUDEDIR}")
+install(DIRECTORY   ${CMAKE_SOURCE_DIR}/include/                    DESTINATION "${INCLUDEDIR}")
 install(FILES       ${CMAKE_CURRENT_BINARY_DIR}/miral.pc
                     ${CMAKE_CURRENT_BINARY_DIR}/mirclientcpp.pc    DESTINATION "${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig")
