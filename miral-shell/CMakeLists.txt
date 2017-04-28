@@ -50,13 +50,12 @@ add_executable(miral-shell
 )
 
 pkg_check_modules(FREETYPE freetype2 REQUIRED)
-target_include_directories(miral-shell PUBLIC ${FREETYPE_INCLUDE_DIRS})
-target_compile_definitions(miral-shell PUBLIC -DTYPO_SUPPORTS_FREETYPE)
-target_link_libraries(miral-shell ${FREETYPE_LIBRARIES})
-
+target_include_directories(miral-shell PRIVATE ${FREETYPE_INCLUDE_DIRS})
+target_compile_definitions(miral-shell PRIVATE -DTYPO_SUPPORTS_FREETYPE)
 target_link_libraries(miral-shell
     miral-spinner
     miral
+    ${FREETYPE_LIBRARIES}
 )
 
 install(TARGETS miral-shell
