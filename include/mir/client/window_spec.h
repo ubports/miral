@@ -23,6 +23,7 @@
 
 #include <mir_toolkit/mir_connection.h>
 #include <mir_toolkit/mir_window.h>
+#include <mir_toolkit/version.h>
 
 #include <memory>
 
@@ -36,13 +37,6 @@ class WindowSpec
 public:
     explicit WindowSpec(MirWindowSpec* spec) : self{spec, deleter} {}
 
-    static auto for_normal_window(MirConnection* connection, int width, int height, MirPixelFormat format) -> WindowSpec
-    {
-        auto spec = WindowSpec{mir_create_normal_window_spec(connection, width, height)};
-        mir_window_spec_set_pixel_format(spec, format);
-        return spec;
-    }
-
     static auto for_normal_window(MirConnection* connection, int width, int height) -> WindowSpec
     {
         return WindowSpec{mir_create_normal_window_spec(connection, width, height)};
@@ -51,46 +45,39 @@ public:
     static auto for_menu(MirConnection* connection,
                          int width,
                          int height,
-                         MirPixelFormat format,
                          MirWindow* parent,
                          MirRectangle* rect,
                          MirEdgeAttachment edge) -> WindowSpec
     {
         auto spec = WindowSpec{mir_create_menu_window_spec(connection, width, height, parent, rect, edge)};
-        mir_window_spec_set_pixel_format(spec, format);
         return spec;
     }
 
     static auto for_tip(MirConnection* connection,
                         int width,
                         int height,
-                        MirPixelFormat format,
                         MirWindow* parent,
                         MirRectangle* rect,
                         MirEdgeAttachment edge) -> WindowSpec
     {
         auto spec = WindowSpec{mir_create_tip_window_spec(connection, width, height, parent, rect, edge)};
-        mir_window_spec_set_pixel_format(spec, format);
         return spec;
     }
 
     static auto for_dialog(MirConnection* connection,
                            int width,
-                           int height,
-                           MirPixelFormat format)-> WindowSpec
+                           int height)-> WindowSpec
     {
         auto spec = WindowSpec{mir_create_dialog_window_spec(connection, width, height)};
-        mir_window_spec_set_pixel_format(spec, format);
         return spec;
     }
 
     static auto for_dialog(MirConnection* connection,
                            int width,
                            int height,
-                           MirPixelFormat format,
                            MirWindow* parent) -> WindowSpec
     {
-        return for_dialog(connection, width, height, format).set_parent(parent);
+        return for_dialog(connection, width, height).set_parent(parent);
     }
 
     static auto for_input_method(MirConnection* connection, int width, int height, MirWindow* parent)
@@ -102,6 +89,9 @@ public:
 
     static auto for_satellite(MirConnection* connection, int width, int height, MirWindow* parent)
     {
+#if MIR_CLIENT_API_VERSION >= MIR_VERSION_NUMBER(0, 27, 0)
+        return WindowSpec{mir_create_satellite_window_spec(connection, width, height, parent)};
+#else
         // There's no mir_create_satellite_window_spec()
         return WindowSpec{mir_create_window_spec(connection)}
             .set_buffer_usage(mir_buffer_usage_hardware) // Required protobuf field for create_window()
@@ -109,33 +99,26 @@ public:
             .set_size(width, height)
             .set_type(mir_window_type_satellite)
             .set_parent(parent);
+#endif
     }
 
     static auto for_gloss(MirConnection* connection, int width, int height)
     {
+#if MIR_CLIENT_API_VERSION >= MIR_VERSION_NUMBER(0, 27, 0)
+        return WindowSpec{mir_create_gloss_window_spec(connection, width, height)};
+#else
         // There's no mir_create_gloss_window_spec()
         return WindowSpec{mir_create_window_spec(connection)}
             .set_buffer_usage(mir_buffer_usage_hardware) // Required protobuf field for create_window()
             .set_pixel_format(mir_pixel_format_invalid)  // Required protobuf field for create_window()
             .set_size(width, height)
             .set_type(mir_window_type_gloss);
+#endif
     }
 
     static auto for_changes(MirConnection* connection) -> WindowSpec
     {
         return WindowSpec{mir_create_window_spec(connection)};
-    }
-
-    auto set_buffer_usage(MirBufferUsage usage) -> WindowSpec&
-    {
-        mir_window_spec_set_buffer_usage(*this, usage);
-        return *this;
-    }
-
-    auto set_pixel_format(MirPixelFormat format) -> WindowSpec&
-    {
-        mir_window_spec_set_pixel_format(*this, format);
-        return *this;
     }
 
     auto set_type(MirWindowType type) -> WindowSpec&
@@ -216,6 +199,13 @@ public:
     auto set_state(MirWindowState state) -> WindowSpec&
     {
         mir_window_spec_set_state(*this, state);
+        return *this;
+    }
+
+    auto add_surface(MirRenderSurface* surface, int width, int height, int displacement_x, int displacement_y)
+    -> WindowSpec&
+    {
+        mir_window_spec_add_render_surface(*this, surface, width, height, displacement_x, displacement_y);
         return *this;
     }
 

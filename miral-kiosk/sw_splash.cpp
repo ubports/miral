@@ -18,7 +18,10 @@
 
 #include "sw_splash.h"
 
+#include <mir/client/display_config.h>
+#include <mir/client/surface.h>
 #include <mir/client/window.h>
+#include <mir/client/window_spec.h>
 
 #include <mir_toolkit/mir_buffer_stream.h>
 
@@ -26,7 +29,6 @@
 #include <cstring>
 #include <thread>
 #include <mutex>
-#include <mir/client/window_spec.h>
 
 namespace
 {
@@ -60,12 +62,29 @@ MirPixelFormat find_8888_format(MirConnection* connection)
     return *pixel_formats;
 }
 
-auto create_window(MirConnection* connection, MirPixelFormat pixel_format) -> mir::client::Window
+auto create_window(MirConnection* connection, mir::client::Surface const& surface) -> mir::client::Window
 {
-    return mir::client::WindowSpec::for_normal_window(connection, 42, 42, pixel_format)
+    int id = 0;
+    int width = 0;
+    int height = 0;
+
+    mir::client::DisplayConfig{connection}.for_each_output([&](MirOutput const* output)
+        {
+            if (mir_output_get_connection_state(output) == mir_output_connection_state_connected &&
+                mir_output_is_enabled(output))
+            {
+                id = mir_output_get_id(output);
+
+                MirOutputMode const* mode = mir_output_get_current_mode(output);
+                width = mir_output_mode_get_width(mode);
+                height = mir_output_mode_get_height(mode);
+            }
+        });
+
+    return mir::client::WindowSpec::for_normal_window(connection, width, height)
         .set_name("splash")
-        .set_buffer_usage(mir_buffer_usage_software)
-        .set_fullscreen_on_output(0)
+        .set_fullscreen_on_output(id)
+        .add_surface(surface, width, height, 0, 0)
         .create_window();
 }
 
@@ -128,10 +147,13 @@ void SwSplash::operator()(MirConnection* connection)
         return;
     };
 
-    auto const surface = create_window(connection, pixel_format);
+
+    mir::client::Surface surface{mir_connection_create_render_surface_sync(connection, 42, 42)};
+    MirBufferStream* buffer_stream = mir_render_surface_get_buffer_stream(surface, 42, 42, pixel_format);
+
+    auto const window = create_window(connection, surface);
 
     MirGraphicsRegion graphics_region;
-    MirBufferStream* buffer_stream = mir_window_get_buffer_stream(surface);
 
     auto const time_limit = std::chrono::steady_clock::now() + std::chrono::seconds(2);
 
