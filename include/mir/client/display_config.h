@@ -21,7 +21,6 @@
 
 #include <mir_toolkit/mir_connection.h>
 #include <mir_toolkit/mir_display_configuration.h>
-#include <mir/client/detail/mir_features.h>
 
 #include <functional>
 #include <memory>
@@ -57,9 +56,6 @@ public:
             enumerator(mir_display_config_get_output(*this, i));
     }
 
-#if MIR_DEFINES_DISPLAY_CONFIG_GET_MUTABLE_OUTPUT
-    // Is it worthwhile to emulate this functionality for Mir 0.21?
-    // Too many API gaps I think.
     void for_each_output(std::function<void(MirOutput*)> const& enumerator)
     {
         auto const count = mir_display_config_get_num_outputs(*this);
@@ -67,7 +63,6 @@ public:
         for (int i = 0; i != count; ++i)
             enumerator(mir_display_config_get_mutable_output(*this, i));
     }
-#endif
 
 private:
     static void deleter(MirDisplayConfig* config) { mir_display_config_release(config); }

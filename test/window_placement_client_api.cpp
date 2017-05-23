@@ -16,19 +16,8 @@
  * Authored by: Alan Griffiths <alan@octopull.co.uk>
  */
 
-#include <mir/version.h>
-#include <mir_toolkit/version.h>
-
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 25, 0)
-#if MIR_CLIENT_VERSION < MIR_VERSION_NUMBER(3, 5, 0)
-#include <mir_toolkit/events/surface_placement.h>
-auto const mir_event_get_window_placement_event = mir_event_get_surface_placement_event;
-#else
 #include <mir_toolkit/events/window_placement.h>
-#endif
-#endif
 
-#include <mir/client/detail/mir_forward_compatibility.h>
 #include <mir/client/window_spec.h>
 #include <mir/client/window.h>
 
@@ -77,12 +66,6 @@ struct WindowPlacementClientAPI : miral::TestServer
     Window child;
 };
 }
-
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 25, 0)
-
-#if MIR_CLIENT_VERSION == MIR_VERSION_NUMBER(3, 4, 0)
-auto const mir_event_type_window_placement   = mir_event_type_surface_placement;
-#endif
 
 namespace
 {
@@ -156,4 +139,3 @@ TEST_F(WindowPlacementClientAPI, given_menu_placements_away_from_edges_when_noti
         spec.apply_to(child);
     }
 }
-#endif

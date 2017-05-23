@@ -60,7 +60,6 @@ add_library(miral SHARED
                                         ${CMAKE_SOURCE_DIR}/include/mir/client/connection.h
                                         ${CMAKE_SOURCE_DIR}/include/mir/client/display_config.h
                                         ${CMAKE_SOURCE_DIR}/include/mir/client/window.h
-                                        ${CMAKE_SOURCE_DIR}/include/mir/client/detail/mir_forward_compatibility.h
                                         ${CMAKE_SOURCE_DIR}/include/miral/window_management_policy_addendum2.h
 )
 
@@ -98,23 +97,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/miral.pc.in
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mirclientcpp.pc.in
     ${CMAKE_CURRENT_BINARY_DIR}/mirclientcpp.pc
     @ONLY
-)
-
-if (MIRSERVER_VERSION VERSION_LESS 0.24)
-    set(MIR_POINTER_CONFINEMENT 0)
-else()
-    set(MIR_POINTER_CONFINEMENT 1)
-endif()
-
-if (MIRSERVER_VERSION VERSION_LESS 0.22)
-    set(MIR_DISPLAY_CONFIG_GET_MUTABLE 0)
-else()
-    set(MIR_DISPLAY_CONFIG_GET_MUTABLE 1)
-endif()
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/mir_features.h.in
-    ${PROJECT_SOURCE_DIR}/include/mir/client/detail/mir_features.h
 )
 
 configure_file(
