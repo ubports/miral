@@ -20,49 +20,11 @@
 #define MIR_CLIENT_WINDOW_SPEC_H
 
 #include <mir/client/window.h>
-#include <mir/client/detail/mir_forward_compatibility.h>
 
 #include <mir_toolkit/mir_connection.h>
-
-#if MIR_CLIENT_VERSION < MIR_VERSION_NUMBER(3, 5, 0)
-#include <mir_toolkit/mir_surface.h>
-#else
 #include <mir_toolkit/mir_window.h>
-#endif
 
 #include <memory>
-
-// Forward compatibility hacks for earlier Mir versions
-#if MIR_CLIENT_VERSION < MIR_VERSION_NUMBER(3, 5, 0)
-using MirWindowCallback = mir_surface_callback;
-using MirWindowEventCallback = mir_surface_event_callback;
-auto const mir_create_window_spec               = mir_connection_create_spec_for_changes;
-auto const mir_window_spec_set_event_handler    = mir_surface_spec_set_event_handler;
-auto const mir_window_spec_set_name             = mir_surface_spec_set_name;
-auto const mir_window_spec_set_width            = mir_surface_spec_set_width;
-auto const mir_window_spec_set_height           = mir_surface_spec_set_height;
-auto const mir_window_spec_set_width_increment  = mir_surface_spec_set_width_increment;
-auto const mir_window_spec_set_height_increment = mir_surface_spec_set_height_increment;
-auto const mir_window_spec_set_buffer_usage     = mir_surface_spec_set_buffer_usage;
-auto const mir_window_spec_set_pixel_format     = mir_surface_spec_set_pixel_format;
-auto const mir_window_spec_set_type             = mir_surface_spec_set_type;
-auto const mir_window_spec_set_shell_chrome     = mir_surface_spec_set_shell_chrome;
-auto const mir_window_spec_set_min_width        = mir_surface_spec_set_min_width;
-auto const mir_window_spec_set_min_height       = mir_surface_spec_set_min_height;
-auto const mir_window_spec_set_max_width        = mir_surface_spec_set_max_width;
-auto const mir_window_spec_set_max_height       = mir_surface_spec_set_max_height;
-auto const mir_window_spec_set_parent           = mir_surface_spec_set_parent;
-auto const mir_window_spec_set_state            = mir_surface_spec_set_state;
-auto const mir_window_spec_set_fullscreen_on_output = mir_surface_spec_set_fullscreen_on_output;
-auto const mir_create_window                    = mir_surface_create;
-auto const mir_create_window_sync               = mir_surface_create_sync;
-auto const mir_window_apply_spec                = mir_surface_apply_spec;
-auto const mir_window_spec_release              = mir_surface_spec_release;
-
-#if MIR_CLIENT_VERSION >= MIR_VERSION_NUMBER(3, 4, 0)
-auto const mir_window_spec_set_placement        = mir_surface_spec_set_placement;
-#endif
-#endif
 
 namespace mir
 {
@@ -76,21 +38,15 @@ public:
 
     static auto for_normal_window(MirConnection* connection, int width, int height, MirPixelFormat format) -> WindowSpec
     {
-#if MIR_CLIENT_VERSION <= MIR_VERSION_NUMBER(3, 4, 0)
-        return WindowSpec{mir_connection_create_spec_for_normal_surface(connection, width, height, format)};
-#else
         auto spec = WindowSpec{mir_create_normal_window_spec(connection, width, height)};
         mir_window_spec_set_pixel_format(spec, format);
         return spec;
-#endif
     }
 
-#if MIR_CLIENT_VERSION > MIR_VERSION_NUMBER(3, 4, 0)
     static auto for_normal_window(MirConnection* connection, int width, int height) -> WindowSpec
     {
         return WindowSpec{mir_create_normal_window_spec(connection, width, height)};
     }
-#endif
 
     static auto for_menu(MirConnection* connection,
                          int width,
@@ -100,13 +56,9 @@ public:
                          MirRectangle* rect,
                          MirEdgeAttachment edge) -> WindowSpec
     {
-#if MIR_CLIENT_VERSION < MIR_VERSION_NUMBER(3, 5, 0)
-        return WindowSpec{mir_connection_create_spec_for_menu(connection, width, height, format, parent, rect, edge)};
-#else
         auto spec = WindowSpec{mir_create_menu_window_spec(connection, width, height, parent, rect, edge)};
         mir_window_spec_set_pixel_format(spec, format);
         return spec;
-#endif
     }
 
     static auto for_tip(MirConnection* connection,
@@ -117,24 +69,9 @@ public:
                         MirRectangle* rect,
                         MirEdgeAttachment edge) -> WindowSpec
     {
-#if MIR_CLIENT_VERSION >= MIR_VERSION_NUMBER(3, 4, 0)
-#if MIR_CLIENT_VERSION < MIR_VERSION_NUMBER(3, 5, 0)
-        return WindowSpec{mir_connection_create_spec_for_tip(connection, width, height, format, parent, rect, edge)};
-#else
         auto spec = WindowSpec{mir_create_tip_window_spec(connection, width, height, parent, rect, edge)};
         mir_window_spec_set_pixel_format(spec, format);
         return spec;
-#endif
-#else
-        (void)rect;
-        (void)edge;
-        return WindowSpec{mir_create_surface_spec(connection)}
-            .set_buffer_usage(mir_buffer_usage_hardware) // Required protobuf field for create_window()
-            .set_pixel_format(format)  // Required protobuf field for create_window()
-            .set_size(width, height)
-            .set_parent(parent)
-            .set_type(mir_window_type_tip);
-#endif
     }
 
     static auto for_dialog(MirConnection* connection,
@@ -142,13 +79,9 @@ public:
                            int height,
                            MirPixelFormat format)-> WindowSpec
     {
-#if MIR_CLIENT_VERSION < MIR_VERSION_NUMBER(3, 5, 0)
-        return WindowSpec{mir_connection_create_spec_for_dialog(connection, width, height, format)};
-#else
         auto spec = WindowSpec{mir_create_dialog_window_spec(connection, width, height)};
         mir_window_spec_set_pixel_format(spec, format);
         return spec;
-#endif
     }
 
     static auto for_dialog(MirConnection* connection,
@@ -162,15 +95,7 @@ public:
 
     static auto for_input_method(MirConnection* connection, int width, int height, MirWindow* parent)
     {
-#if MIR_CLIENT_VERSION >= MIR_VERSION_NUMBER(3, 5, 0)
         auto spec = WindowSpec{mir_create_input_method_window_spec(connection, width, height)}
-#else
-        auto spec = WindowSpec{mir_create_surface_spec(connection)}
-            .set_buffer_usage(mir_buffer_usage_hardware) // Required protobuf field for create_window()
-            .set_pixel_format(mir_pixel_format_invalid)  // Required protobuf field for create_window()
-            .set_size(width, height)
-            .set_type(mir_window_type_inputmethod)
-#endif
             .set_parent(parent);
         return spec;
     }
@@ -271,7 +196,6 @@ public:
         return *this;
     }
 
-#if MIR_CLIENT_VERSION >= MIR_VERSION_NUMBER(3, 4, 0)
     auto set_placement(const MirRectangle* rect,
                        MirPlacementGravity rect_gravity,
                        MirPlacementGravity surface_gravity,
@@ -282,17 +206,6 @@ public:
         mir_window_spec_set_placement(*this, rect, rect_gravity, surface_gravity, placement_hints, offset_dx, offset_dy);
         return *this;
     }
-#else
-    auto set_placement(const MirRectangle* /*rect*/,
-                       MirPlacementGravity /*rect_gravity*/,
-                       MirPlacementGravity /*surface_gravity*/,
-                       MirPlacementHints   /*placement_hints*/,
-                       int                 /*offset_dx*/,
-                       int                 /*offset_dy*/) -> WindowSpec&
-    {
-        return *this;
-    }
-#endif
 
     auto set_parent(MirWindow* parent) -> WindowSpec&
     {

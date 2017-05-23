@@ -23,8 +23,6 @@
 #include <mir/geometry/rectangles.h>
 #include <mir_toolkit/event.h>
 
-#include <mir/client/detail/mir_forward_compatibility.h>
-
 namespace miral
 {
 class Window;
