@@ -15,7 +15,7 @@
  *
  * Authored by: Alan Griffiths <alan@octopull.co.uk>
  */
-
+#define MIR_ENABLE_DEPRECATIONS 0
 #include <mir_toolkit/mir_window.h>
 #include <mir_toolkit/mir_blob.h>
 

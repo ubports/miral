@@ -20,6 +20,7 @@
 
 #include <mir/client/blob.h>
 #include <mir/client/cookie.h>
+#include <mir/client/surface.h>
 #include <mir/client/window.h>
 #include <mir/client/window_spec.h>
 #include <mir_toolkit/mir_buffer_stream.h>
@@ -85,22 +86,26 @@ auto const receive_event_timeout = 1s; //90s;
 struct ConnectedClientWithAWindow : miral::TestServer
 {
     Connection connection;
+    Surface surface;
     Window window;
 
     void SetUp() override
     {
         miral::TestServer::SetUp();
         connection = connect_client(__func__);
-        window = WindowSpec::for_normal_window(connection, surface_size.width.as_int(), surface_size.height.as_int())
-            .set_pixel_format(mir_pixel_format_abgr_8888)
+        auto const width = surface_size.width.as_int();
+        auto const height = surface_size.height.as_int();
+        surface = Surface{mir_connection_create_render_surface_sync(connection, width, height)};
+        window = WindowSpec::for_normal_window(connection, width, height)
             .set_name("ConnectedClientWithAWindow")
-            .set_buffer_usage(mir_buffer_usage_hardware)
+            .add_surface(surface, width, height, 0, 0)
             .create_window();
     }
 
     void TearDown() override
     {
         window.reset();
+        surface.reset();
         connection.reset();
         miral::TestServer::TearDown();
     }
@@ -124,7 +129,7 @@ struct DragAndDrop : ConnectedClientWithAWindow,
 
         create_target_window();
 
-        paint_window(window);
+        paint_window(surface, window);
 
         center_mouse();
     }
@@ -134,6 +139,7 @@ struct DragAndDrop : ConnectedClientWithAWindow,
         reset_window_event_handler(target_window);
         reset_window_event_handler(window);
         target_window.reset();
+        target_surface.reset();
         another_connection.reset();
         ConnectedClientWithAWindow::TearDown();
     }
@@ -149,7 +155,7 @@ struct DragAndDrop : ConnectedClientWithAWindow,
 private:
     auto build_window_manager_policy(miral::WindowManagerTools const& tools) -> std::unique_ptr<TestWindowManagerPolicy> override;
     void center_mouse();
-    void paint_window(MirWindow* w);
+    void paint_window(MirRenderSurface* s, MirWindow* w);
     void set_window_event_handler(MirWindow* window, std::function<void(MirEvent const* event)> const& handler);
     void set_window_dnd_start_handler(MirWindow* window, std::function<void(MirDragAndDropEvent const*)> const& handler);
     void reset_window_event_handler(MirWindow* window);
@@ -157,15 +163,16 @@ private:
     void create_target_window()
     {
         another_connection = connect_client("another_connection");
-        target_window = WindowSpec::
-            for_normal_window(connection, screen_geometry.size.width.as_int(), screen_geometry.size.height.as_int())
-            .set_pixel_format(mir_pixel_format_abgr_8888)
-        .set_name("target_window")
-        .set_buffer_usage(mir_buffer_usage_hardware)
-        .set_event_handler(&window_event_handler, this)
-        .create_window();
+        auto const height = screen_geometry.size.height.as_int();
+        auto const width = screen_geometry.size.width.as_int();
+        target_surface = Surface{mir_connection_create_render_surface_sync(another_connection, width,height)};
+        target_window = WindowSpec::for_normal_window(another_connection, width, height)
+            .set_name("target_window")
+            .add_surface(target_surface, width, height, 0, 0)
+            .set_event_handler(&window_event_handler, this)
+            .create_window();
 
-        paint_window(target_window);
+        paint_window(target_surface, target_window);
     }
 
     void invoke_window_event_handler(MirWindow* window, MirEvent const* event)
@@ -190,6 +197,7 @@ private:
     static void window_dnd_start_handler(MirWindow* window, MirDragAndDropEvent const* event, void* context);
 
     Connection another_connection;
+    Surface    target_surface;
     Window     target_window;
 };
 
@@ -213,7 +221,7 @@ void DragAndDrop::reset_window_event_handler(MirWindow* window)
     if (window == target_window) target_window_event_handler_ = [](MirEvent const*) {};
 }
 
-void DragAndDrop::paint_window(MirWindow* w)
+void DragAndDrop::paint_window(MirRenderSurface* s, MirWindow* w)
 {
     Signal have_focus;
 
@@ -230,7 +238,11 @@ void DragAndDrop::paint_window(MirWindow* w)
             have_focus.raise();
         });
 
-    mir_buffer_stream_swap_buffers_sync(mir_window_get_buffer_stream(w));
+    int width;
+    int height;
+    mir_render_surface_get_size(s, &width, &height);
+    mir_buffer_stream_swap_buffers_sync(
+        mir_render_surface_get_buffer_stream(s, width, height, mir_pixel_format_argb_8888));
 
     EXPECT_THAT(have_focus.wait_for(receive_event_timeout), Eq(true));
 

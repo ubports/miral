@@ -19,11 +19,16 @@
 #ifndef MIR_CLIENT_WINDOW_SPEC_H
 #define MIR_CLIENT_WINDOW_SPEC_H
 
+#ifndef MIR_DEPRECATE_RENDERSURFACES
+#define MIR_DEPRECATE_RENDERSURFACES 0
+#endif
+
 #include <mir/client/window.h>
 
 #include <mir_toolkit/mir_connection.h>
 #include <mir_toolkit/mir_window.h>
 #include <mir_toolkit/version.h>
+#include <mir_toolkit/rs/mir_render_surface.h>
 
 #include <memory>
 

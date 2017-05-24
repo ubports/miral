@@ -19,7 +19,9 @@
 #ifndef MIRAL_SURFACE_H
 #define MIRAL_SURFACE_H
 
+#ifndef MIR_DEPRECATE_RENDERSURFACES
 #define MIR_DEPRECATE_RENDERSURFACES 0
+#endif
 
 #include <mir_toolkit/rs/mir_render_surface.h>
 
