@@ -66,10 +66,8 @@ private:
     FT_Face face;
 };
 
-void paint_surface(MirWindow* surface, std::string const& title, int const intensity)
+void paint_surface(MirBufferStream* buffer_stream, std::string const& title, int const intensity)
 {
-    MirBufferStream* buffer_stream = mir_window_get_buffer_stream(surface);
-
     // TODO sometimes buffer_stream is nullptr - find out why (and fix).
     // (Only observed when creating a lot of clients at once)
     if (!buffer_stream)
@@ -321,24 +319,33 @@ void DecorationProvider::operator()(Connection connection)
     DisplayConfig const display_conf{this->connection};
 
     display_conf.for_each_output([this](MirOutput const* output)
-         {
-             wallpaper.push_back(
-                 WindowSpec::for_gloss(this->connection, 100, 100)
-                     .set_pixel_format(mir_pixel_format_xrgb_8888)
-                     .set_buffer_usage(mir_buffer_usage_software)
-                     .set_fullscreen_on_output(mir_output_get_id(output))
-                     .set_name(wallpaper_name).create_window());
+        {
+            auto const mode = mir_output_get_current_mode(output);
+            auto const output_id = mir_output_get_id(output);
+            auto const width = mir_output_mode_get_width(mode);
+            auto const height = mir_output_mode_get_height(mode);
 
-             MirGraphicsRegion graphics_region;
-             MirBufferStream* buffer_stream = mir_window_get_buffer_stream(wallpaper.back());
+            Surface surface{mir_connection_create_render_surface_sync(this->connection, width, height)};
 
-             mir_buffer_stream_get_graphics_region(buffer_stream, &graphics_region);
+            auto const buffer_stream =
+                mir_render_surface_get_buffer_stream(surface, width, height, mir_pixel_format_xrgb_8888);
 
-             static uint8_t const pattern[4] = { 0x00, 0x00, 0x00, 0x00 };
+            auto window = WindowSpec::for_gloss(this->connection, width, height)
+                .set_fullscreen_on_output(output_id)
+                .add_surface(surface, width, height, 0, 0)
+                .set_name(wallpaper_name).create_window();
 
-             render_pattern(&graphics_region, pattern);
-             mir_buffer_stream_swap_buffers_sync(buffer_stream);
-         });
+            wallpaper.push_back(Wallpaper{surface, window, buffer_stream});
+
+            MirGraphicsRegion graphics_region;
+
+            mir_buffer_stream_get_graphics_region(buffer_stream, &graphics_region);
+
+            static uint8_t const pattern[4] = { 0x00, 0x00, 0x00, 0x00 };
+
+            render_pattern(&graphics_region, pattern);
+            mir_buffer_stream_swap_buffers_sync(buffer_stream);
+        });
 
     start_work();
 }
@@ -355,23 +362,57 @@ auto DecorationProvider::session() const -> std::shared_ptr<mir::scene::Session>
     return weak_session.lock();
 }
 
+void DecorationProvider::handle_event(MirWindow* window, MirEvent const* ev, void* context_)
+{
+    auto* const context = (Data*)context_;
+
+    switch (mir_event_get_type(ev))
+    {
+    case mir_event_type_resize:
+    {
+        MirResizeEvent const* resize = mir_event_get_resize_event(ev);
+        int const new_width = mir_resize_event_get_width(resize);
+        int const new_height = mir_resize_event_get_height(resize);
+        mir_render_surface_set_size(context->surface, new_width, new_height);
+
+        MirWindowSpec* spec = mir_create_window_spec(context->connection);
+        mir_window_spec_add_render_surface(spec, context->surface, new_width, new_height, 0, 0);
+        mir_window_apply_spec(window, spec);
+        mir_window_spec_release(spec);
+
+        break;
+    }
+
+    default:
+        break;
+    }
+}
+
 void DecorationProvider::create_titlebar_for(miral::Window const& window)
 {
+    if (is_decoration(window)) return;
+
     enqueue_work([this, window]
         {
+            auto const width = window.size().width.as_int();
             std::ostringstream buffer;
-
             buffer << std::shared_ptr<mir::scene::Surface>(window).get();
 
-            auto const spec = WindowSpec::for_normal_window(
-                connection, window.size().width.as_int(), title_bar_height, mir_pixel_format_xrgb_8888)
-                .set_buffer_usage(mir_buffer_usage_software)
-                .set_type(mir_window_type_gloss)
-                .set_name(buffer.str().c_str());
+            Surface surface{mir_connection_create_render_surface_sync(this->connection, width, title_bar_height)};
 
             std::lock_guard<decltype(mutex)> lock{mutex};
+
+            auto const data = &window_to_titlebar[window];
+            data->connection = connection;
+            data->surface = surface;
+            data->stream = mir_render_surface_get_buffer_stream(surface, width, title_bar_height, mir_pixel_format_xrgb_8888);
             windows_awaiting_titlebar[buffer.str()] = window;
-            spec.create_window(insert, &window_to_titlebar[window]);
+
+            WindowSpec::for_gloss(connection, width, title_bar_height)
+                .add_surface(surface, width, title_bar_height, 0, 0)
+                .set_name(buffer.str().c_str())
+                .set_event_handler(&handle_event, data)
+                .create_window(insert, data);
         });
 }
 
@@ -383,15 +424,7 @@ void DecorationProvider::paint_titlebar_for(miral::WindowInfo const& info, int i
 
         auto const title = info.name();
 
-        if (auto surface = data->titlebar.load())
-        {
-            enqueue_work([this, surface, title, intensity]{ paint_surface(surface, title, intensity); });
-        }
-        else
-        {
-            data->on_create = [this, title, intensity](MirWindow* surface)
-                { enqueue_work([this, surface, title, intensity]{ paint_surface(surface, title, intensity); }); };
-        }
+        enqueue_work([this, stream=data->stream, title, intensity]{ paint_surface(stream, title, intensity); });
     }
 }
 
@@ -506,11 +539,8 @@ void DecorationProvider::repaint_titlebar_for(miral::WindowInfo const& window_in
     {
         auto const title = window_info.name();
 
-        if (auto surface = data->titlebar.load())
-        {
-            enqueue_work([this, surface, title, intensity=data->intensity.load()]
-                             { paint_surface(surface, title, intensity); });
-        }
+        enqueue_work([this, stream=data->stream, title, intensity=data->intensity.load()]
+            { paint_surface(stream, title, intensity); });
     }
 }
 
