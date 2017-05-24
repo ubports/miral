@@ -47,7 +47,8 @@ set(MIRAL_VERSION_PATCH 0)
 set(MIRAL_VERSION ${MIRAL_VERSION_MAJOR}.${MIRAL_VERSION_MINOR}.${MIRAL_VERSION_PATCH})
 
 if (MIRCLIENT_VERSION VERSION_LESS 0.27)
-    add_definitions(-DMIR_ENABLE_DEPRECATIONS=0)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated-declarations")
 endif()
 
 add_subdirectory(miral)
