@@ -46,6 +46,10 @@ set(MIRAL_VERSION_PATCH 0)
 
 set(MIRAL_VERSION ${MIRAL_VERSION_MAJOR}.${MIRAL_VERSION_MINOR}.${MIRAL_VERSION_PATCH})
 
+if (MIRCLIENT_VERSION VERSION_LESS 0.27)
+    add_definitions(-DMIR_ENABLE_DEPRECATIONS=0)
+endif()
+
 add_subdirectory(miral)
 add_subdirectory(miral-shell)
 add_subdirectory(miral-kiosk)

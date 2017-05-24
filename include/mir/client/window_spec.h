@@ -98,12 +98,14 @@ public:
         return WindowSpec{mir_create_satellite_window_spec(connection, width, height, parent)};
 #else
         // There's no mir_create_satellite_window_spec()
-        return WindowSpec{mir_create_window_spec(connection)}
-            .set_buffer_usage(mir_buffer_usage_hardware) // Required protobuf field for create_window()
-            .set_pixel_format(mir_pixel_format_invalid)  // Required protobuf field for create_window()
+        auto spec = WindowSpec{mir_create_window_spec(connection)}
             .set_size(width, height)
             .set_type(mir_window_type_satellite)
             .set_parent(parent);
+
+        mir_window_spec_set_buffer_usage(spec, mir_buffer_usage_hardware); // Required protobuf field for create_window()
+        mir_window_spec_set_pixel_format(spec, mir_pixel_format_invalid);  // Required protobuf field for create_window()
+        return spec;
 #endif
     }
 
@@ -113,11 +115,13 @@ public:
         return WindowSpec{mir_create_gloss_window_spec(connection, width, height)};
 #else
         // There's no mir_create_gloss_window_spec()
-        return WindowSpec{mir_create_window_spec(connection)}
-            .set_buffer_usage(mir_buffer_usage_hardware) // Required protobuf field for create_window()
-            .set_pixel_format(mir_pixel_format_invalid)  // Required protobuf field for create_window()
+        auto spec = WindowSpec{mir_create_window_spec(connection)}
             .set_size(width, height)
             .set_type(mir_window_type_gloss);
+
+        mir_window_spec_set_buffer_usage(spec, mir_buffer_usage_hardware); // Required protobuf field for create_window()
+        mir_window_spec_set_pixel_format(spec, mir_pixel_format_invalid);  // Required protobuf field for create_window()
+        return spec;
 #endif
     }
 
