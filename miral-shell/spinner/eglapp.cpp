@@ -16,6 +16,8 @@
 
 #include "eglapp.h"
 
+#include <mir/client/display_config.h>
+
 #include "miregl.h"
 
 
@@ -71,53 +73,32 @@ MirPixelFormat select_pixel_format(MirConnection* connection)
 
 std::vector<std::shared_ptr<MirEglSurface>> mir_eglapp_init(MirConnection* const connection)
 {
-    MirWindowParameters surfaceparm =
-        {
-            "eglappsurface",
-            0, 0,
-            mir_pixel_format_xbgr_8888,
-            mir_buffer_usage_hardware,
-            mir_display_output_id_invalid
-        };
-
-    EGLint swapinterval = 1;
+    char const * const name = "eglappsurface";
 
     if (!mir_connection_is_valid(connection))
         throw std::runtime_error("Can't get connection");
 
     auto const pixel_format = select_pixel_format(connection);
-    surfaceparm.pixel_format = pixel_format;
 
     auto const mir_egl_app = make_mir_eglapp(connection, pixel_format);
 
     std::vector<std::shared_ptr<MirEglSurface>> result;
 
-    // If a size has been specified just do that
-    if (surfaceparm.width && surfaceparm.height)
-    {
-        result.push_back(std::make_shared<MirEglSurface>(mir_egl_app, surfaceparm, swapinterval));
-        return result;
-    }
-
-    // If an output has been specified just do that
-    if (surfaceparm.output_id != mir_display_output_id_invalid)
-    {
-        result.push_back(std::make_shared<MirEglSurface>(mir_egl_app, surfaceparm, swapinterval));
-        return result;
-    }
-
-    // but normally, we're fullscreen on every active output
-    for_each_active_output(connection, [&](MirOutput const* output)
+    mir::client::DisplayConfig{connection}.for_each_output([&](MirOutput const* output)
         {
-            auto const& mode = mir_output_get_current_mode(output);
+            if (mir_output_get_connection_state(output) == mir_output_connection_state_connected &&
+                mir_output_is_enabled(output))
+            {
+                auto const mode = mir_output_get_current_mode(output);
+                auto const output_id = mir_output_get_id(output);
 
-            printf("Active output [%u] at (%d, %d) is %dx%d\n",
-                   mir_output_get_id(output),
-                   mir_output_get_position_x(output), mir_output_get_position_y(output),
-                   mir_output_mode_get_width(mode), mir_output_mode_get_height(mode));
+                printf("Active output [%u] at (%d, %d) is %dx%d\n",
+                       output_id,
+                       mir_output_get_position_x(output), mir_output_get_position_y(output),
+                       mir_output_mode_get_width(mode), mir_output_mode_get_height(mode));
 
-            surfaceparm.output_id = mir_output_get_id(output);
-            result.push_back(std::make_shared<MirEglSurface>(mir_egl_app, surfaceparm, swapinterval));
+                result.push_back(std::make_shared<MirEglSurface>(mir_egl_app, name, output));
+            }
         });
 
     if (result.empty())
