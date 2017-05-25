@@ -320,6 +320,9 @@ void DecorationProvider::operator()(Connection connection)
 
     display_conf.for_each_output([this](MirOutput const* output)
         {
+            if (!mir_output_is_enabled(output))
+                return;
+
             auto const mode = mir_output_get_current_mode(output);
             auto const output_id = mir_output_get_id(output);
             auto const width = mir_output_mode_get_width(mode);
