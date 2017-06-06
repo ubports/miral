@@ -15,7 +15,10 @@
  *
  * Authored by: Alan Griffiths <alan@octopull.co.uk>
  */
-#define MIR_ENABLE_DEPRECATIONS 0
+
+#include <mir/client/surface.h>
+#include <mir/client/window_spec.h>
+
 #include <mir_toolkit/mir_window.h>
 #include <mir_toolkit/mir_blob.h>
 
@@ -70,8 +73,6 @@ private:
 
 void mir_cookie_release(Cookie const&) = delete;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 struct MockWindowManager : mir::shell::CanonicalWindowManager
 {
     using mir::shell::CanonicalWindowManager::CanonicalWindowManager;
@@ -79,7 +80,6 @@ struct MockWindowManager : mir::shell::CanonicalWindowManager
     MOCK_METHOD3(handle_request_move,
         void(std::shared_ptr<mir::scene::Session> const&, std::shared_ptr<mir::scene::Surface> const&, uint64_t));
 };
-#pragma GCC diagnostic pop
 
 struct MouseMoverAndFaker
 {
@@ -135,6 +135,7 @@ struct ClientMediatedUserGestures : mir_test_framework::ConnectedClientWithAWind
     {
         reset_window_event_handler();
         window_manager.reset();
+        surface.reset();
         mir_test_framework::ConnectedClientWithAWindow::TearDown();
     }
 
@@ -152,6 +153,8 @@ private:
         std::lock_guard<decltype(window_event_handler_mutex)> lock{window_event_handler_mutex};
         window_event_handler_(event);
     }
+
+    mir::client::Surface surface;
 
     std::mutex window_event_handler_mutex;
     std::function<void(MirEvent const* event)> window_event_handler_ = [](MirEvent const*) {};
@@ -178,6 +181,13 @@ void ClientMediatedUserGestures::window_event_handler(MirWindow* /*window*/, Mir
 
 void ClientMediatedUserGestures::paint_window()
 {
+    {
+        surface = mir::client::Surface{mir_connection_create_render_surface_sync(connection, 42, 42)};
+        auto const spec = mir::client::WindowSpec::for_changes(connection);
+        mir_window_spec_add_render_surface(spec, surface, 42, 42, 0, 0);
+        mir_window_apply_spec(window, spec);
+    }
+
     Signal have_focus;
 
     set_window_event_handler([&](MirEvent const* event)
@@ -193,7 +203,7 @@ void ClientMediatedUserGestures::paint_window()
                 have_focus.raise();
         });
 
-    mir_buffer_stream_swap_buffers_sync(mir_window_get_buffer_stream(window));
+    mir_buffer_stream_swap_buffers_sync(mir_render_surface_get_buffer_stream(surface, 42, 42, mir_pixel_format_argb_8888));
 
     EXPECT_THAT(have_focus.wait_for(receive_event_timeout), Eq(true));
 
