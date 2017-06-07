@@ -23,6 +23,7 @@
 #include <mir/client/window_spec.h>
 
 #include <mir_toolkit/mir_buffer_stream.h>
+#include <mir_toolkit/version.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -379,7 +380,14 @@ void DecorationProvider::handle_event(MirWindow* window, MirEvent const* ev, voi
         mir_render_surface_set_size(context->surface, new_width, new_height);
 
         MirWindowSpec* spec = mir_create_window_spec(context->connection);
+#if MIR_CLIENT_API_VERSION < MIR_VERSION_NUMBER(0, 27, 0)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
         mir_window_spec_add_render_surface(spec, context->surface, new_width, new_height, 0, 0);
+#if MIR_CLIENT_API_VERSION < MIR_VERSION_NUMBER(0, 27, 0)
+#pragma GCC diagnostic pop
+#endif
         mir_window_apply_spec(window, spec);
         mir_window_spec_release(spec);
 

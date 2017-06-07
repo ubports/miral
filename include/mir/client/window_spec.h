@@ -210,7 +210,14 @@ public:
     auto add_surface(MirRenderSurface* surface, int width, int height, int displacement_x, int displacement_y)
     -> WindowSpec&
     {
+#if MIR_CLIENT_API_VERSION < MIR_VERSION_NUMBER(0, 27, 0)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
         mir_window_spec_add_render_surface(*this, surface, width, height, displacement_x, displacement_y);
+#if MIR_CLIENT_API_VERSION < MIR_VERSION_NUMBER(0, 27, 0)
+#pragma GCC diagnostic pop
+#endif
         return *this;
     }
 
