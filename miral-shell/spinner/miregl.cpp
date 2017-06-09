@@ -16,7 +16,6 @@
 
 #include "miregl.h"
 #include <mir/client/window_spec.h>
-#include <mir_toolkit/version.h>
 
 #include <cstring>
 

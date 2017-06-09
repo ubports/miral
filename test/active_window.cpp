@@ -21,7 +21,6 @@
 #include <mir/client/window.h>
 #include <mir/client/window_spec.h>
 #include <mir_toolkit/mir_buffer_stream.h>
-#include <mir_toolkit/version.h>
 
 #include <miral/application_info.h>
 
@@ -35,11 +34,6 @@ using namespace mir::client;
 using namespace std::chrono_literals;
 using miral::WindowManagerTools;
 
-#if MIR_CLIENT_VERSION < MIR_VERSION_NUMBER(3, 5, 0)
-auto const mir_event_type_window = mir_event_type_surface;
-auto const mir_window_event_get_attribute = mir_surface_event_get_attribute;
-auto const mir_event_get_window_event = mir_event_get_surface_event;
-#endif
 
 namespace
 {
@@ -88,7 +82,6 @@ struct ActiveWindow : public miral::TestServer
         return surface;
     }
 
-#if MIR_CLIENT_VERSION >= MIR_VERSION_NUMBER(3, 4, 0)
     auto create_tip(Connection const& connection, char const* name, Window const& parent, FocusChangeSync& sync) -> Window
     {
         MirRectangle aux_rect{10, 10, 10, 10};
@@ -105,7 +98,6 @@ struct ActiveWindow : public miral::TestServer
 
         return surface;
     }
-#endif
 
     auto create_dialog(Connection const& connection, char const* name, Window const& parent, FocusChangeSync& sync) -> Window
     {
@@ -272,7 +264,6 @@ TEST_F(ActiveWindow, closing_a_second_application_makes_first_active)
     assert_active_window_is(test_name);
 }
 
-#if MIR_CLIENT_VERSION >= MIR_VERSION_NUMBER(3, 4, 0)
 TEST_F(ActiveWindow, selecting_a_tip_makes_parent_active)
 {
     char const* const test_name = __PRETTY_FUNCTION__;
@@ -298,7 +289,6 @@ TEST_F(ActiveWindow, selecting_a_tip_makes_parent_active)
 
     assert_active_window_is(test_name);
 }
-#endif
 
 TEST_F(ActiveWindow, selecting_a_parent_makes_dialog_active)
 {

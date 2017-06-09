@@ -19,25 +19,8 @@
 #ifndef MIR_CLIENT_WINDOW_ID_H
 #define MIR_CLIENT_WINDOW_ID_H
 
-#include <mir/client/detail/mir_forward_compatibility.h>
-#if MIR_CLIENT_VERSION < MIR_VERSION_NUMBER(3, 5, 0)
-#include <mir_toolkit/mir_surface.h>
-auto const mir_window_request_window_id_sync = mir_surface_request_persistent_id_sync;
-#else
 #include <mir_toolkit/mir_window.h>
-#endif
-
-#if MIR_CLIENT_API_VERSION < MIR_VERSION_NUMBER(0, 26, 1)
-#if MIR_CLIENT_VERSION == MIR_VERSION_NUMBER(3, 5, 0)
-#include <mir_toolkit/mir_persistent_id.h>
-auto const mir_window_request_window_id_sync = mir_window_request_persistent_id_sync;
-#endif
-auto const mir_window_id_as_string  = mir_persistent_id_as_string;
-auto const mir_window_id_release    = mir_persistent_id_release;
-typedef struct MirPersistentId MirWindowId;
-#else
 #include <mir_toolkit/mir_window_id.h>
-#endif
 
 #include <memory>
 
