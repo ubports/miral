@@ -27,12 +27,7 @@
 #define MIRAL_FAKE_NEW_SYMBOL(old_sym, new_sym)\
     extern "C" __attribute__((alias(#old_sym))) void new_sym();
 
-#if (MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 26, 0))
-    #define MIRAL_BOTH_VERSIONS(old_sym, new_sym)\
-    MIRAL_FAKE_OLD_SYMBOL(old_sym, new_sym)
-#else
-    #define MIRAL_BOTH_VERSIONS(old_sym, new_sym)\
-    MIRAL_FAKE_NEW_SYMBOL(old_sym, new_sym)
-#endif
+#define MIRAL_BOTH_VERSIONS(old_sym, new_sym)\
+MIRAL_FAKE_OLD_SYMBOL(old_sym, new_sym)
 
 #endif //MIRAL_BOTH_VERSIONS_H

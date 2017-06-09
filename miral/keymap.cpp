@@ -25,13 +25,8 @@
 #include <mir/server.h>
 #include <mir/version.h>
 
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 26, 0)
 #include <mir/input/keymap.h>
 #include <mir/input/mir_keyboard_config.h>
-#elif MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 24, 1)
-#include <mir/input/keymap.h>
-#include <mir/input/keyboard_configuration.h>
-#endif
 
 #define MIR_LOG_COMPONENT "miral::Keymap"
 #include <mir/log.h>
@@ -107,7 +102,6 @@ struct miral::Keymap::Self : mir::input::InputDeviceObserver
         apply_keymap(keyboard);
     }
 
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 24, 1)
     void apply_keymap(std::shared_ptr<mir::input::Device> const& keyboard)
     {
         auto const keyboard_config = keyboard->keyboard_configuration();
@@ -115,11 +109,7 @@ struct miral::Keymap::Self : mir::input::InputDeviceObserver
 
         if (keyboard_config.is_set())
         {
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 26, 0)
             keymap = keyboard_config.value().device_keymap();
-#else
-            keymap = keyboard_config.value().device_keymap;
-#endif
         }
 
         keymap.layout = layout;
@@ -127,12 +117,6 @@ struct miral::Keymap::Self : mir::input::InputDeviceObserver
         keymap.options = options;
         keyboard->apply_keyboard_configuration(std::move(keymap));
     }
-#else
-    void apply_keymap(std::shared_ptr<mir::input::Device> const&)
-    {
-        mir::log_warning("Cannot apply keymap - not supported for Mir versions prior to 0.24.1");
-    }
-#endif
 
     void device_removed(std::shared_ptr<mir::input::Device> const& device) override
     {
