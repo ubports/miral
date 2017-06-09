@@ -26,31 +26,6 @@ float mir_eglapp_background_opacity = 1.0f;
 
 namespace
 {
-template<typename ActiveOutputHandler>
-void for_each_active_output(
-    MirConnection* const connection, ActiveOutputHandler const& handler)
-{
-    /* eglapps are interested in the screen size, so
-    use mir_connection_create_display_config */
-    MirDisplayConfig* display_config =
-        mir_connection_create_display_configuration(connection);
-
-    int const n = mir_display_config_get_num_outputs(display_config);
-
-    for (int i = 0; i != n; ++i)
-    {
-        MirOutput const *const output = mir_display_config_get_output(display_config, i);
-        if (mir_output_is_enabled(output) &&
-            mir_output_get_connection_state(output) == mir_output_connection_state_connected &&
-            mir_output_get_num_modes(output) &&
-            mir_output_get_current_mode_index(output) < (size_t)mir_output_get_num_modes(output))
-        {
-            handler(output);
-        }
-    }
-    mir_display_config_release(display_config);
-}
-
 MirPixelFormat select_pixel_format(MirConnection* connection)
 {
     unsigned int format[mir_pixel_formats];
