@@ -21,6 +21,7 @@ do
     exit 0
   elif [ "$1" == "-force" ];
   then
+    export XDG_SESSION_TYPE=x11
     export GDK_BACKEND=x11
     export QT_QPA_PLATFORM=xcb
     export SDL_VIDEODRIVER=x11
