@@ -286,11 +286,6 @@ void DecorationProvider::stop()
         {
             if (connection)
             {
-#if MIR_CLIENT_API_VERSION < MIR_VERSION_NUMBER(0, 26, 2)
-                auto const Workaround_lp_1667645 =
-                     WindowSpec::for_normal_window(connection, 100, 100, mir_pixel_format_xrgb_8888)
-                         .set_name(wallpaper_name).create_window();
-#endif
                 wallpaper.erase(begin(wallpaper), end(wallpaper));
             }
             connection.reset();
