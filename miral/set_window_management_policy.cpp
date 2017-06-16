@@ -64,11 +64,7 @@ void miral::SetWindowManagementPolicy::operator()(mir::Server& server) const
         {
             auto const display_layout = server.the_shell_display_layout();
 
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 24, 0)
             auto const persistent_surface_store = server.the_persistent_surface_store();
-#else
-            std::shared_ptr<mir::shell::PersistentSurfaceStore> const persistent_surface_store;
-#endif
 
             if (server.get_options()->is_set(trace_option))
             {

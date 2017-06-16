@@ -32,8 +32,6 @@ Height const display_height{720};
 Rectangle const display_area{{display_left,  display_top},
                              {display_width, display_height}};
 
-auto const null_window = Window{};
-
 struct SelectActiveWindow : TestWindowManagerTools
 {
 

@@ -56,12 +56,8 @@ void miral::WindowManagerOptions::operator()(mir::Server& server) const
             auto const selection = options->get<std::string>(wm_option);
 
             auto const display_layout = server.the_shell_display_layout();
-
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 24, 0)
             auto const persistent_surface_store = server.the_persistent_surface_store();
-#else
-            std::shared_ptr<mir::shell::PersistentSurfaceStore> const persistent_surface_store;
-#endif
+
             for (auto const& option : policies)
             {
                 if (selection == option.name)
