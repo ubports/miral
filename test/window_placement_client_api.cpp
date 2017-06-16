@@ -46,7 +46,7 @@ struct WindowPlacementClientAPI : miral::TestServer
         char const* const test_name = __PRETTY_FUNCTION__;
 
         connection = connect_client(test_name);
-        auto spec = WindowSpec::for_normal_window(connection, 400, 400, mir_pixel_format_argb_8888)
+        auto spec = WindowSpec::for_normal_window(connection, 400, 400)
             .set_name(test_name);
 
         parent = spec.create_window();
@@ -120,7 +120,7 @@ TEST_F(WindowPlacementClientAPI, given_menu_placements_away_from_edges_when_noti
         CheckPlacement expected{aux_rect.left+(int)aux_rect.width, aux_rect.top, dx, dy};
 
         auto const spec = WindowSpec::
-            for_menu(connection, dx, dy, mir_pixel_format_argb_8888, parent, &aux_rect, mir_edge_attachment_any)
+            for_menu(connection, dx, dy, parent, &aux_rect, mir_edge_attachment_any)
             .set_event_handler(&CheckPlacement::callback, &expected)
             .set_name(test_name);
 

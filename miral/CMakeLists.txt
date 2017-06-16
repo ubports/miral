@@ -1,4 +1,4 @@
-pkg_check_modules(MIRSERVER mirserver>=0.20 REQUIRED)
+pkg_check_modules(MIRSERVER mirserver>=0.26 REQUIRED)
 
 if(${CMAKE_COMPILER_IS_GNUCXX})
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -flto")

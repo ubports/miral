@@ -18,6 +18,7 @@
 
 #include "test_server.h"
 
+#include <mir/client/surface.h>
 #include <mir/client/window.h>
 #include <mir/client/window_spec.h>
 #include <mir_toolkit/mir_buffer_stream.h>
@@ -62,56 +63,79 @@ private:
     mir::test::Signal signal;
 };
 
+struct TestWindow : Surface, Window
+{
+    using Surface::operator=;
+    using Window::operator=;
+};
+
 struct ActiveWindow : public miral::TestServer
 {
     FocusChangeSync sync1;
     FocusChangeSync sync2;
 
-    auto create_surface(Connection const& connection, char const* name, FocusChangeSync& sync) -> Window
+    void paint(Surface const& surface)
     {
-        auto const spec = WindowSpec::for_normal_window(connection, 50, 50, mir_pixel_format_argb_8888)
-            .set_buffer_usage(mir_buffer_usage_software)
-            .set_event_handler(&FocusChangeSync::raise_signal_on_focus_change, &sync)
-            .set_name(name);
-
-        Window const surface{spec.create_window()};
-
-        sync.exec([&]{ mir_buffer_stream_swap_buffers_sync(mir_window_get_buffer_stream(surface)); });
-        EXPECT_TRUE(sync.signal_raised());
-
-        return surface;
+        mir_buffer_stream_swap_buffers_sync(
+            mir_render_surface_get_buffer_stream(surface, 50, 50, mir_pixel_format_argb_8888));
     }
 
-    auto create_tip(Connection const& connection, char const* name, Window const& parent, FocusChangeSync& sync) -> Window
+    auto create_window(Connection const& connection, char const* name, FocusChangeSync& sync) -> TestWindow
     {
-        MirRectangle aux_rect{10, 10, 10, 10};
-        auto const spec = WindowSpec::for_tip(connection, 50, 50, mir_pixel_format_argb_8888, parent, &aux_rect, mir_edge_attachment_any)
-            .set_buffer_usage(mir_buffer_usage_software)
+        TestWindow result;
+
+        result = Surface{mir_connection_create_render_surface_sync(connection, 50, 50)};
+
+        auto const spec = WindowSpec::for_normal_window(connection, 50, 50)
             .set_event_handler(&FocusChangeSync::raise_signal_on_focus_change, &sync)
+            .add_surface(result, 50, 50, 0, 0)
             .set_name(name);
 
-        Window const surface{spec.create_window()};
+        result = Window{spec.create_window()};
+
+        sync.exec([&]{ paint(result); });
+
+        EXPECT_TRUE(sync.signal_raised());
+
+        return result;
+    }
+
+    auto create_tip(Connection const& connection, char const* name, Window const& parent, FocusChangeSync& sync) -> TestWindow
+    {
+        TestWindow result;
+        result = Surface{mir_connection_create_render_surface_sync(connection, 50, 50)};
+
+        MirRectangle aux_rect{10, 10, 10, 10};
+        auto const spec = WindowSpec::for_tip(connection, 50, 50, parent, &aux_rect, mir_edge_attachment_any)
+            .set_event_handler(&FocusChangeSync::raise_signal_on_focus_change, &sync)
+            .add_surface(result, 50, 50, 0, 0)
+            .set_name(name);
+
+        result = Window{spec.create_window()};
 
         // Expect this to timeout: A tip should not receive focus
-        sync.exec([&]{ mir_buffer_stream_swap_buffers_sync(mir_window_get_buffer_stream(surface)); });
+        sync.exec([&]{ paint(result); });
         EXPECT_FALSE(sync.signal_raised());
 
-        return surface;
+        return result;
     }
 
-    auto create_dialog(Connection const& connection, char const* name, Window const& parent, FocusChangeSync& sync) -> Window
+    auto create_dialog(Connection const& connection, char const* name, Window const& parent, FocusChangeSync& sync) -> TestWindow
     {
-        auto const spec = WindowSpec::for_dialog(connection, 50, 50, mir_pixel_format_argb_8888, parent)
-            .set_buffer_usage(mir_buffer_usage_software)
+        TestWindow result;
+        result = Surface{mir_connection_create_render_surface_sync(connection, 50, 50)};
+
+        auto const spec = WindowSpec::for_dialog(connection, 50, 50, parent)
             .set_event_handler(&FocusChangeSync::raise_signal_on_focus_change, &sync)
+            .add_surface(result, 50, 50, 0, 0)
             .set_name(name);
 
-        Window const surface{spec.create_window()};
+        result = Window{spec.create_window()};
 
-        sync.exec([&]{ mir_buffer_stream_swap_buffers_sync(mir_window_get_buffer_stream(surface)); });
+        sync.exec([&]{ paint(result); });
         EXPECT_TRUE(sync.signal_raised());
 
-        return surface;
+        return result;
     }
 
     void assert_no_active_window()
@@ -143,7 +167,7 @@ TEST_F(ActiveWindow, a_single_window_when_ready_becomes_active)
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
 
-    auto const surface = create_surface(connection, test_name, sync1);
+    auto const window = create_window(connection, test_name, sync1);
 
     assert_active_window_is(test_name);
 }
@@ -152,9 +176,9 @@ TEST_F(ActiveWindow, a_single_window_when_hiding_becomes_inactive)
 {
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
-    auto const surface = create_surface(connection, test_name, sync1);
+    auto const window = create_window(connection, test_name, sync1);
 
-    sync1.exec([&]{ mir_window_set_state(surface, mir_window_state_hidden); });
+    sync1.exec([&]{ mir_window_set_state(window, mir_window_state_hidden); });
 
     EXPECT_TRUE(sync1.signal_raised());
     assert_no_active_window();
@@ -164,11 +188,11 @@ TEST_F(ActiveWindow, a_single_window_when_unhiding_becomes_active)
 {
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
-    auto const surface = create_surface(connection, test_name, sync1);
+    auto const window = create_window(connection, test_name, sync1);
 
-    sync1.exec([&]{ mir_window_set_state(surface, mir_window_state_hidden); });
+    sync1.exec([&]{ mir_window_set_state(window, mir_window_state_hidden); });
 
-    sync1.exec([&]{ mir_window_set_state(surface, mir_window_state_restored); });
+    sync1.exec([&]{ mir_window_set_state(window, mir_window_state_restored); });
 
     EXPECT_TRUE(sync1.signal_raised());
 
@@ -180,8 +204,8 @@ TEST_F(ActiveWindow, a_second_window_when_ready_becomes_active)
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
 
-    auto const first_surface = create_surface(connection, "first", sync1);
-    auto const surface = create_surface(connection, test_name, sync2);
+    auto const first_window = create_window(connection, "first", sync1);
+    auto const window = create_window(connection, test_name, sync2);
 
     assert_active_window_is(test_name);
 }
@@ -191,10 +215,10 @@ TEST_F(ActiveWindow, a_second_window_hiding_makes_first_active)
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
 
-    auto const first_surface = create_surface(connection, test_name, sync1);
-    auto const surface = create_surface(connection, another_name, sync2);
+    auto const first_window = create_window(connection, test_name, sync1);
+    auto const window = create_window(connection, another_name, sync2);
 
-    sync2.exec([&]{ mir_window_set_state(surface, mir_window_state_hidden); });
+    sync2.exec([&]{ mir_window_set_state(window, mir_window_state_hidden); });
 
     EXPECT_TRUE(sync2.signal_raised());
     assert_active_window_is(test_name);
@@ -205,13 +229,13 @@ TEST_F(ActiveWindow, a_second_window_unhiding_leaves_first_active)
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
 
-    auto const first_surface = create_surface(connection, test_name, sync1);
-    auto const surface = create_surface(connection, another_name, sync2);
+    auto const first_window = create_window(connection, test_name, sync1);
+    auto const window = create_window(connection, another_name, sync2);
 
-    sync1.exec([&]{ mir_window_set_state(surface, mir_window_state_hidden); });
+    sync1.exec([&]{ mir_window_set_state(window, mir_window_state_hidden); });
 
     // Expect this to timeout
-    sync2.exec([&]{ mir_window_set_state(surface, mir_window_state_restored); });
+    sync2.exec([&]{ mir_window_set_state(window, mir_window_state_restored); });
 
     EXPECT_THAT(sync2.signal_raised(), Eq(false));
     assert_active_window_is(test_name);
@@ -222,8 +246,8 @@ TEST_F(ActiveWindow, switching_from_a_second_window_makes_first_active)
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
 
-    auto const first_surface = create_surface(connection, test_name, sync1);
-    auto const surface = create_surface(connection, another_name, sync2);
+    auto const first_window = create_window(connection, test_name, sync1);
+    auto const window = create_window(connection, another_name, sync2);
 
     sync1.exec([&]{ invoke_tools([](WindowManagerTools& tools){ tools.focus_next_within_application(); }); });
 
@@ -237,8 +261,8 @@ TEST_F(ActiveWindow, switching_from_a_second_application_makes_first_active)
     auto const connection = connect_client(test_name);
     auto const second_connection = connect_client(another_name);
 
-    auto const first_surface = create_surface(connection, test_name, sync1);
-    auto const surface = create_surface(second_connection, another_name, sync2);
+    auto const first_window = create_window(connection, test_name, sync1);
+    auto const window = create_window(second_connection, another_name, sync2);
 
     sync1.exec([&]{ invoke_tools([](WindowManagerTools& tools){ tools.focus_next_application(); }); });
 
@@ -251,12 +275,12 @@ TEST_F(ActiveWindow, closing_a_second_application_makes_first_active)
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
 
-    auto const first_surface = create_surface(connection, test_name, sync1);
+    auto const first_window = create_window(connection, test_name, sync1);
 
     sync1.exec([&]
         {
             auto const second_connection = connect_client(another_name);
-            auto const surface = create_surface(second_connection, another_name, sync2);
+            auto const window = create_window(second_connection, another_name, sync2);
             assert_active_window_is(another_name);
         });
 
@@ -269,14 +293,14 @@ TEST_F(ActiveWindow, selecting_a_tip_makes_parent_active)
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
 
-    auto const parent = create_surface(connection, test_name, sync1);
+    auto const parent = create_window(connection, test_name, sync1);
 
     miral::Window parent_window;
     invoke_tools([&](WindowManagerTools& tools){ parent_window = tools.active_window(); });
 
     // Steal the focus
     auto second_connection = connect_client(another_name);
-    auto second_surface = create_surface(second_connection, another_name, sync2);
+    auto second_surface = create_window(second_connection, another_name, sync2);
 
     auto const tip = create_tip(connection, "tip", parent, sync2);
 
@@ -296,7 +320,7 @@ TEST_F(ActiveWindow, selecting_a_parent_makes_dialog_active)
     auto const dialog_name = "dialog";
     auto const connection = connect_client(test_name);
 
-    auto const parent = create_surface(connection, test_name, sync1);
+    auto const parent = create_window(connection, test_name, sync1);
 
     miral::Window parent_window;
     invoke_tools([&](WindowManagerTools& tools){ parent_window = tools.active_window(); });
@@ -305,7 +329,7 @@ TEST_F(ActiveWindow, selecting_a_parent_makes_dialog_active)
 
     // Steal the focus
     auto second_connection = connect_client(another_name);
-    auto second_surface = create_surface(second_connection, another_name, sync1);
+    auto second_surface = create_window(second_connection, another_name, sync1);
 
     sync2.exec([&]{ invoke_tools([&](WindowManagerTools& tools){ tools.select_active_window(parent_window); }); });
 
@@ -318,7 +342,7 @@ TEST_F(ActiveWindow, input_methods_are_not_focussed)
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
 
-    auto const parent = create_surface(connection, test_name, sync1);
+    auto const parent = create_window(connection, test_name, sync1);
     auto const input_method = WindowSpec::for_input_method(connection, 50, 50, parent).create_window();
 
     assert_active_window_is(test_name);
@@ -337,7 +361,7 @@ TEST_F(ActiveWindow, satellites_are_not_focussed)
     char const* const test_name = __PRETTY_FUNCTION__;
     auto const connection = connect_client(test_name);
 
-    auto const parent = create_surface(connection, test_name, sync1);
+    auto const parent = create_window(connection, test_name, sync1);
     auto const satellite = WindowSpec::for_satellite(connection, 50, 50, parent).create_window();
 
     assert_active_window_is(test_name);
@@ -358,7 +382,7 @@ TEST_F(ActiveWindow, hiding_active_dialog_makes_parent_active)
     auto const dialog_name = "dialog";
     auto const connection = connect_client(parent_name);
 
-    auto const parent = create_surface(connection, parent_name, sync1);
+    auto const parent = create_window(connection, parent_name, sync1);
     auto const dialog = create_dialog(connection, dialog_name, parent, sync2);
 
     sync1.exec([&]{ mir_window_set_state(dialog, mir_window_state_hidden); });
@@ -376,8 +400,8 @@ TEST_F(ActiveWindow, when_another_window_is_about_hiding_active_dialog_makes_par
     auto const another_window_name = "another window";
     auto const connection = connect_client(parent_name);
 
-    auto const parent = create_surface(connection, parent_name, sync1);
-    auto const another_window = create_surface(connection, another_window_name, sync2);
+    auto const parent = create_window(connection, parent_name, sync1);
+    auto const another_window = create_window(connection, another_window_name, sync2);
     auto const dialog = create_dialog(connection, dialog_name, parent, sync3);
 
     sync1.exec([&]{ mir_window_set_state(dialog, mir_window_state_hidden); });

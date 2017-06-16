@@ -19,6 +19,7 @@
 #include <miral/workspace_policy.h>
 #include <miral/window_manager_tools.h>
 
+#include <mir/client/surface.h>
 #include <mir/client/window.h>
 #include <mir/client/window_spec.h>
 #include <mir_toolkit/mir_buffer_stream.h>
@@ -65,57 +66,74 @@ struct WorkspacesWindowManagerPolicy : miral::TestServer::TestWindowManagerPolic
     Workspaces& test_fixture;
 };
 
+struct TestWindow : Surface, Window
+{
+    using Surface::operator=;
+    using Window::operator=;
+};
+
 struct Workspaces : public miral::TestServer
 {
-    auto create_window(std::string const& name) -> Window
+    auto create_window(std::string const& name) -> TestWindow
     {
-        auto const window = WindowSpec::for_normal_window(client_connection, 50, 50, mir_pixel_format_argb_8888)
-            .set_buffer_usage(mir_buffer_usage_software)
+        TestWindow result;
+
+        result = Surface{mir_connection_create_render_surface_sync(client_connection, 50, 50)};
+        result = WindowSpec::for_normal_window(client_connection, 50, 50)
             .set_name(name.c_str())
+            .add_surface(result, 50, 50, 0, 0)
             .create_window();
 
-        client_windows[name] = window;
-        init_window(window);
+        client_windows[name] = result;
+        init_window(result);
 
-        return window;
+        return result;
     }
 
-    void init_window(Window const& window)
+    void init_window(TestWindow const& window)
     {
         mir::test::Signal window_ready;
         EXPECT_CALL(policy(), advise_window_ready(_)).WillOnce(InvokeWithoutArgs([&]{ window_ready.raise(); }));
 
-        mir_buffer_stream_swap_buffers_sync(mir_window_get_buffer_stream(window));
+        mir_buffer_stream_swap_buffers_sync(
+            mir_render_surface_get_buffer_stream(window, 50, 50, mir_pixel_format_argb_8888));
 
         EXPECT_TRUE(window_ready.wait_for(1s));
     }
 
-    auto create_tip(std::string const& name, Window const& parent) -> Window
+    auto create_tip(std::string const& name, Window const& parent) -> TestWindow
     {
+        TestWindow result;
+
+        result = Surface{mir_connection_create_render_surface_sync(client_connection, 50, 50)};
+
         MirRectangle aux_rect{10, 10, 10, 10};
-        auto const window = WindowSpec::for_tip(client_connection, 50, 50, mir_pixel_format_argb_8888, parent,
-                                                &aux_rect, mir_edge_attachment_any)
-            .set_buffer_usage(mir_buffer_usage_software)
+        result = WindowSpec::for_tip(client_connection, 50, 50, parent, &aux_rect, mir_edge_attachment_any)
             .set_name(name.c_str())
+            .add_surface(result, 50, 50, 0, 0)
             .create_window();
 
-        client_windows[name] = window;
-        init_window(window);
+        client_windows[name] = result;
+        init_window(result);
 
-        return window;
+        return result;
     }
 
-    auto create_dialog(std::string const& name, Window const& parent) -> Window
+    auto create_dialog(std::string const& name, Window const& parent) -> TestWindow
     {
-        auto const window = WindowSpec::for_dialog(client_connection, 50, 50, mir_pixel_format_argb_8888, parent)
-            .set_buffer_usage(mir_buffer_usage_software)
+        TestWindow result;
+
+        result = Surface{mir_connection_create_render_surface_sync(client_connection, 50, 50)};
+
+        result = WindowSpec::for_dialog(client_connection, 50, 50, parent)
             .set_name(name.c_str())
+            .add_surface(result, 50, 50, 0, 0)
             .create_window();
 
-        client_windows[name] = window;
-        init_window(window);
+        client_windows[name] = result;
+        init_window(result);
 
-        return window;
+        return result;
     }
 
     auto create_workspace() -> std::shared_ptr<miral::Workspace>
@@ -202,7 +220,7 @@ struct Workspaces : public miral::TestServer
 
 private:
     std::mutex mutable mutex;
-    std::map<std::string, Window> client_windows;
+    std::map<std::string, TestWindow> client_windows;
     std::map<std::string, miral::Window> server_windows;
     WorkspacesWindowManagerPolicy* the_policy{nullptr};
 
@@ -466,9 +484,11 @@ TEST_F(Workspaces, with_two_applications_when_a_window_in_a_workspace_closes_foc
 
     {
         auto const another_app = connect_client("another app");
-        auto const window = WindowSpec::for_normal_window(another_app, 50, 50, mir_pixel_format_argb_8888)
-            .set_buffer_usage(mir_buffer_usage_software)
+        TestWindow window;
+        window = Surface{mir_connection_create_render_surface_sync(another_app, 50, 50)};
+        window = WindowSpec::for_normal_window(another_app, 50, 50)
             .set_name(a_window.c_str())
+            .add_surface(window, 50, 50, 0, 0)
             .create_window();
 
         init_window(window);
@@ -527,9 +547,11 @@ TEST_F(Workspaces, with_two_applications_when_a_window_in_a_workspace_hides_focu
     create_window(another_window);
 
     auto const another_app = connect_client("another app");
-    auto const window = WindowSpec::for_normal_window(another_app, 50, 50, mir_pixel_format_argb_8888)
-        .set_buffer_usage(mir_buffer_usage_software)
+    TestWindow window;
+    window = Surface{mir_connection_create_render_surface_sync(another_app, 50, 50)};
+    window = WindowSpec::for_normal_window(another_app, 50, 50)
         .set_name(a_window.c_str())
+        .add_surface(window, 50, 50, 0, 0)
         .create_window();
 
     init_window(window);
@@ -590,9 +612,11 @@ TEST_F(Workspaces, focus_next_application_keeps_focus_in_workspace)
     create_window(another_window);
 
     auto const another_app = connect_client("another app");
-    auto const window = WindowSpec::for_normal_window(another_app, 50, 50, mir_pixel_format_argb_8888)
-        .set_buffer_usage(mir_buffer_usage_software)
+    TestWindow window;
+    window = Surface{mir_connection_create_render_surface_sync(another_app, 50, 50)};
+    window = WindowSpec::for_normal_window(another_app, 50, 50)
         .set_name(a_window.c_str())
+        .add_surface(window, 50, 50, 0, 0)
         .create_window();
 
     init_window(window);
