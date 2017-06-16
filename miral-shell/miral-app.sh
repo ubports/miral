@@ -46,6 +46,6 @@ sh -c "${bindir}${miral_server} $* ${hostsocket} --file ${socket} --desktop_file
 while [ ! -e "${socket}" ]; do echo "waiting for ${socket}"; sleep 1 ;done
 
 unset QT_QPA_PLATFORMTHEME
-MIR_SOCKET=${socket} GDK_BACKEND=mir QT_QPA_PLATFORM=ubuntumirclient SDL_VIDEODRIVER=mir dbus-run-session -- ${launcher}
+MIR_SOCKET=${socket} XDG_SESSION_TYPE=mir GDK_BACKEND=mir QT_QPA_PLATFORM=ubuntumirclient SDL_VIDEODRIVER=mir dbus-run-session -- ${launcher}
 killall ${bindir}${miral_server}
 
