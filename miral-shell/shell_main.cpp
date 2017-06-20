@@ -17,7 +17,7 @@
  */
 
 #include "tiling_window_manager.h"
-#include "titlebar_window_manager.h"
+#include "floating_window_manager.h"
 #include "titlebar_config.h"
 #include "spinner/splash.h"
 
@@ -44,7 +44,7 @@ int main(int argc, char const* argv[])
     ActiveOutputsMonitor outputs_monitor;
     WindowManagerOptions window_managers
         {
-            add_window_manager_policy<TitlebarWindowManagerPolicy>("titlebar", spinner, launcher, shutdown_hook),
+            add_window_manager_policy<FloatingWindowManagerPolicy>("floating", spinner, launcher, shutdown_hook),
             add_window_manager_policy<TilingWindowManagerPolicy>("tiling", spinner, launcher, outputs_monitor),
         };
 
@@ -83,7 +83,7 @@ int main(int argc, char const* argv[])
         {
             CommandLineOption{[&](std::string const& ) { },
                               "desktop_file_hint", "Ignored for Unity8 compatibility", "miral-shell.desktop"},
-            CursorTheme{"default"},
+            CursorTheme{"DMZ-White"},
             window_managers,
             display_configuration_options,
             launcher,

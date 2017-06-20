@@ -74,11 +74,9 @@ miral::WindowSpecification::Self::Self(mir::shell::SurfaceSpecification const& s
     state(spec.state),
     preferred_orientation(spec.preferred_orientation),
     aux_rect(spec.aux_rect),
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 25, 0)
     placement_hints(spec.placement_hints),
     window_placement_gravity(spec.surface_placement_gravity),
     aux_rect_placement_gravity(spec.aux_rect_placement_gravity),
-#endif
     min_width(spec.min_width),
     min_height(spec.min_height),
     max_width(spec.max_width),
@@ -92,24 +90,10 @@ miral::WindowSpecification::Self::Self(mir::shell::SurfaceSpecification const& s
     input_shape(spec.input_shape),
     input_mode(),
     shell_chrome(spec.shell_chrome)
-#if MIRAL_MIR_DEFINES_POINTER_CONFINEMENT
     ,confine_pointer(spec.confine_pointer)
-#endif
 {
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 25, 0)
     if (spec.aux_rect_placement_offset_x.is_set() && spec.aux_rect_placement_offset_y.is_set())
         aux_rect_placement_offset = Displacement{spec.aux_rect_placement_offset_x.value(), spec.aux_rect_placement_offset_y.value()};
-#endif
-
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 25, 0)
-    // mir_connection_create_spec_for_tooltip() didn't set an edge_attachment preference
-    if (aux_rect.is_set() && !spec.edge_attachment.is_set())
-    {
-        window_placement_gravity = mir_placement_gravity_northwest;
-        aux_rect_placement_gravity = mir_placement_gravity_northeast;
-        placement_hints = mir_placement_hints_flip_any;
-    }
-#endif
 
     if (spec.edge_attachment.is_set() && !placement_hints.is_set())
     {
@@ -166,23 +150,9 @@ void copy_if_set(mir::optional_value<Dest>& dest, mir::optional_value<Source> co
 }
 
 template<typename Source>
-void copy_if_set(mir::optional_value<mir::graphics::BufferUsage>& dest, mir::optional_value<Source> const& source)
-{
-    if (source.is_set()) dest = static_cast<mir::graphics::BufferUsage>(source.value());
-}
-
-template<typename Source>
 void copy_if_set(mir::graphics::BufferUsage& dest, mir::optional_value<Source> const& source)
 {
     if (source.is_set()) dest = static_cast<mir::graphics::BufferUsage>(source.value());
-}
-
-template<typename Source>
-void copy_if_set(
-    mir::optional_value<mir::graphics::DisplayConfigurationOutputId>& dest,
-    mir::optional_value<Source> const& source)
-{
-    if (source.is_set()) dest = static_cast<mir::graphics::DisplayConfigurationOutputId>(source.value());
 }
 
 template<typename Source>
@@ -229,11 +199,9 @@ miral::WindowSpecification::Self::Self(mir::scene::SurfaceCreationParameters con
     state(params.state),
     preferred_orientation(params.preferred_orientation),
     aux_rect(params.aux_rect),
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 25, 0)
     placement_hints(params.placement_hints),
     window_placement_gravity(params.surface_placement_gravity),
     aux_rect_placement_gravity(params.aux_rect_placement_gravity),
-#endif
     min_width(params.min_width),
     min_height(params.min_height),
     max_width(params.max_width),
@@ -242,33 +210,15 @@ miral::WindowSpecification::Self::Self(mir::scene::SurfaceCreationParameters con
     height_inc(params.height_inc),
     min_aspect(),
     max_aspect(),
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 22, 0)
     streams(params.streams),
-#else
-    streams(),
-#endif
     parent(params.parent),
     input_shape(params.input_shape),
     input_mode(static_cast<InputReceptionMode>(params.input_mode)),
     shell_chrome(params.shell_chrome)
-#if MIRAL_MIR_DEFINES_POINTER_CONFINEMENT
     ,confine_pointer(params.confine_pointer)
-#endif
 {
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 25, 0)
     if (params.aux_rect_placement_offset_x.is_set() && params.aux_rect_placement_offset_y.is_set())
         aux_rect_placement_offset = Displacement{params.aux_rect_placement_offset_x.value(), params.aux_rect_placement_offset_y.value()};
-#endif
-
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 25, 0)
-    // mir_connection_create_spec_for_tooltip() didn't set an edge_attachment preference
-    if (aux_rect.is_set() && !params.edge_attachment.is_set())
-    {
-        window_placement_gravity = mir_placement_gravity_northwest;
-        aux_rect_placement_gravity = mir_placement_gravity_northeast;
-        placement_hints = mir_placement_hints_flip_any;
-    }
-#endif
 
     if (params.edge_attachment.is_set() && !placement_hints.is_set())
     {
@@ -325,18 +275,12 @@ void miral::WindowSpecification::Self::update(mir::scene::SurfaceCreationParamet
     copy_if_set(params.height_inc, height_inc);
     copy_if_set(params.min_aspect, min_aspect);
     copy_if_set(params.max_aspect, max_aspect);
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 22, 0)
     copy_if_set(params.streams, streams);
-#endif
     copy_if_set(params.parent, parent);
     copy_if_set(params.input_shape, input_shape);
     copy_if_set(params.input_mode, input_mode);
     copy_if_set(params.shell_chrome, shell_chrome);
-#if MIRAL_MIR_DEFINES_POINTER_CONFINEMENT
     copy_if_set(params.confine_pointer, confine_pointer);
-#endif
-
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 25, 0)
     copy_if_set(params.placement_hints, placement_hints);
     copy_if_set(params.surface_placement_gravity, window_placement_gravity);
     copy_if_set(params.aux_rect_placement_gravity, aux_rect_placement_gravity);
@@ -347,7 +291,6 @@ void miral::WindowSpecification::Self::update(mir::scene::SurfaceCreationParamet
         params.aux_rect_placement_offset_x = offset.dx.as_int();
         params.aux_rect_placement_offset_y = offset.dy.as_int();
     }
-#endif
 }
 
 miral::WindowSpecification::WindowSpecification() :

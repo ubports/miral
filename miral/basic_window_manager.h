@@ -46,6 +46,7 @@ namespace shell { class DisplayLayout; class PersistentSurfaceStore; }
 namespace miral
 {
 class WorkspacePolicy;
+class WindowManagementPolicyAddendum2;
 using mir::shell::SurfaceSet;
 using WindowManagementPolicyBuilder =
     std::function<std::unique_ptr<miral::WindowManagementPolicy>(miral::WindowManagerTools const& tools)>;
@@ -61,6 +62,7 @@ public:
         std::shared_ptr<mir::shell::DisplayLayout> const& display_layout,
         std::shared_ptr<mir::shell::PersistentSurfaceStore> const& persistent_surface_store,
         WindowManagementPolicyBuilder const& build);
+    ~BasicWindowManager();
 
     void add_session(std::shared_ptr<mir::scene::Session> const& session) override;
 
@@ -98,6 +100,11 @@ public:
 
 #if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 27, 0)
     void handle_request_drag_and_drop(
+        std::shared_ptr<mir::scene::Session> const& session,
+        std::shared_ptr<mir::scene::Surface> const& surface,
+        uint64_t timestamp) override;
+
+    void handle_request_move(
         std::shared_ptr<mir::scene::Session> const& session,
         std::shared_ptr<mir::scene::Surface> const& surface,
         uint64_t timestamp) override;
@@ -161,6 +168,8 @@ public:
     auto active_display() -> mir::geometry::Rectangle const override;
 
     void raise_tree(Window const& root) override;
+    void start_drag_and_drop(WindowInfo& window_info, std::vector<uint8_t> const& handle) override;
+    void end_drag_and_drop() override;
 
     void modify_window(WindowInfo& window_info, WindowSpecification const& modifications) override;
 
@@ -190,6 +199,7 @@ private:
 
     std::unique_ptr<WindowManagementPolicy> const policy;
     WorkspacePolicy* const workspace_policy;
+    WindowManagementPolicyAddendum2* const policy2;
 
     std::mutex mutex;
     SessionInfoMap app_info;
@@ -197,6 +207,9 @@ private:
     mir::geometry::Rectangles displays;
     mir::geometry::Point cursor;
     uint64_t last_input_event_timestamp{0};
+#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 27, 0)
+    MirEvent const* last_input_event{nullptr};
+#endif
     miral::MRUWindowList mru_active_windows;
     using FullscreenSurfaces = std::set<Window>;
     FullscreenSurfaces fullscreen_surfaces;
@@ -213,6 +226,7 @@ private:
     void update_event_timestamp(MirKeyboardEvent const* kev);
     void update_event_timestamp(MirPointerEvent const* pev);
     void update_event_timestamp(MirTouchEvent const* tev);
+    void update_event_timestamp(MirInputEvent const* iev);
 
     auto can_activate_window_for_session(miral::Application const& session) -> bool;
     auto can_activate_window_for_session_in_workspace(

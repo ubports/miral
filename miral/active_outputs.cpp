@@ -23,12 +23,8 @@
 #include <mir/graphics/display_configuration.h>
 #include <mir/server.h>
 
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 26, 0)
-#include <mir/graphics/display_configuration_report.h>
-#else
 #include <mir/graphics/display_configuration_observer.h>
 #include <mir/observer_registrar.h>
-#endif
 
 #include <algorithm>
 #include <mutex>
@@ -40,17 +36,6 @@ void miral::ActiveOutputsListener::advise_output_create(Output const& /*output*/
 void miral::ActiveOutputsListener::advise_output_update(Output const& /*updated*/, Output const& /*original*/) {}
 void miral::ActiveOutputsListener::advise_output_delete(Output const& /*output*/) {}
 
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 26, 0)
-struct miral::ActiveOutputsMonitor::Self : mir::graphics::DisplayConfigurationReport
-{
-    virtual void initial_configuration(mir::graphics::DisplayConfiguration const& configuration) override;
-    virtual void new_configuration(mir::graphics::DisplayConfiguration const& configuration) override;
-
-    std::mutex mutex;
-    std::vector<ActiveOutputsListener*> listeners;
-    std::vector<Output> outputs;
-};
-#else
 struct miral::ActiveOutputsMonitor::Self : mir::graphics::DisplayConfigurationObserver
 {
     void initial_configuration(std::shared_ptr<mir::graphics::DisplayConfiguration const> const& configuration) override;
@@ -79,7 +64,6 @@ struct miral::ActiveOutputsMonitor::Self : mir::graphics::DisplayConfigurationOb
     std::vector<ActiveOutputsListener*> listeners;
     std::vector<Output> outputs;
 };
-#endif
 
 miral::ActiveOutputsMonitor::ActiveOutputsMonitor() :
     self{std::make_shared<Self>()}
@@ -109,12 +93,8 @@ void miral::ActiveOutputsMonitor::operator()(mir::Server& server)
 {
     std::lock_guard<decltype(self->mutex)> lock{self->mutex};
 
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 26, 0)
-    server.override_the_display_configuration_report([this]{ return self; });
-#else
     server.add_pre_init_callback([this, &server]
         { server.the_display_configuration_observer_registrar()->register_interest(self); });
-#endif
 }
 
 void miral::ActiveOutputsMonitor::process_outputs(
@@ -125,65 +105,11 @@ void miral::ActiveOutputsMonitor::process_outputs(
 }
 
 
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 26, 0)
-void miral::ActiveOutputsMonitor::Self::initial_configuration(mir::graphics::DisplayConfiguration const& configuration)
-{
-    new_configuration(configuration);
-}
-#else
 void miral::ActiveOutputsMonitor::Self::initial_configuration(std::shared_ptr<mir::graphics::DisplayConfiguration const> const& configuration)
 {
     configuration_applied(configuration);
 }
-#endif
 
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 26, 0)
-void miral::ActiveOutputsMonitor::Self::new_configuration(mir::graphics::DisplayConfiguration const& configuration)
-{
-    std::lock_guard<decltype(mutex)> lock{mutex};
-
-    decltype(outputs) current_outputs;
-
-    for (auto const l : listeners)
-        l->advise_output_begin();
-
-    configuration.for_each_output([&current_outputs, this](mir::graphics::DisplayConfigurationOutput const& output)
-        {
-            Output o{output};
-
-            if (!o.connected() || !o.valid()) return;
-
-            auto op = find_if(begin(outputs), end(outputs), [&](Output const& oo) { return oo.is_same_output(o); });
-
-            if (op == end(outputs))
-            {
-                for (auto const l : listeners)
-                    l->advise_output_create(o);
-            }
-            else if (!equivalent_display_area(o, *op))
-            {
-                for (auto const l : listeners)
-                    l->advise_output_update(o, *op);
-            }
-
-            current_outputs.push_back(o);
-        });
-
-    for (auto const& o : outputs)
-    {
-        auto op = find_if(begin(current_outputs), end(current_outputs), [&](Output const& oo)
-            { return oo.is_same_output(o); });
-
-        if (op == end(current_outputs))
-            for (auto const l : listeners)
-                l->advise_output_delete(o);
-    }
-
-    current_outputs.swap(outputs);
-    for (auto const l : listeners)
-        l->advise_output_end();
-}
-#else
 void miral::ActiveOutputsMonitor::Self::configuration_applied(std::shared_ptr<mir::graphics::DisplayConfiguration const> const& config)
 {
     std::lock_guard<decltype(mutex)> lock{mutex};
@@ -233,4 +159,3 @@ void miral::ActiveOutputsMonitor::Self::configuration_applied(std::shared_ptr<mi
     for (auto const l : listeners)
         l->advise_output_end();
 }
-#endif

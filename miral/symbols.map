@@ -401,3 +401,24 @@ global:
     vtable?for?miral::SetWindowManagementPolicy;
   };
 } MIRAL_1.3;
+
+MIRAL_1.4.0 {
+global:
+  extern "C++" {
+    miral::WindowManagementPolicyAddendum2::?WindowManagementPolicyAddendum2*;
+    miral::WindowManagementPolicyAddendum2::WindowManagementPolicyAddendum2*;
+    miral::WindowManagementPolicyAddendum2::operator*;
+    miral::WindowManagerTools::end_drag_and_drop*;
+    miral::WindowManagerTools::start_drag_and_drop*;
+    miral::toolkit::Window::Window*;
+    non-virtual?thunk?to?miral::WindowManagementPolicyAddendum2::?WindowManagementPolicyAddendum2*;
+    typeinfo?for?miral::WindowManagementPolicyAddendum2;
+    typeinfo?for?miral::toolkit::Window;
+    typeinfo?for?miral::toolkit::WindowId;
+    typeinfo?for?miral::toolkit::WindowSpec;
+    vtable?for?miral::WindowManagementPolicyAddendum2;
+    vtable?for?miral::toolkit::Window;
+    vtable?for?miral::toolkit::WindowId;
+    vtable?for?miral::toolkit::WindowSpec;
+  };
+} MIRAL_1.3.1;

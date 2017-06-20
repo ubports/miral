@@ -1,5 +1,5 @@
 /*
- * Copyright © 2016 Canonical Ltd.
+ * Copyright © 2017 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3,
@@ -16,11 +16,10 @@
  * Authored by: Alan Griffiths <alan@octopull.co.uk>
  */
 
-#ifndef MIR_CLIENT_WINDOW_ID_H
-#define MIR_CLIENT_WINDOW_ID_H
+#ifndef MIRAL_SURFACE_H
+#define MIRAL_SURFACE_H
 
-#include <mir_toolkit/mir_window.h>
-#include <mir_toolkit/mir_window_id.h>
+#include <mir_toolkit/rs/mir_render_surface.h>
 
 #include <memory>
 
@@ -28,21 +27,24 @@ namespace mir
 {
 namespace client
 {
-/// Handle class for MirWindowId - provides automatic reference counting
-class WindowId
+/// Handle class for MirRenderSurface - provides automatic reference counting.
+class Surface
 {
 public:
-    explicit WindowId(MirWindowId* id) : self{id, deleter} {}
+    Surface() = default;
+    explicit Surface(MirRenderSurface* spec) : self{spec, &mir_render_surface_release} {}
 
-    explicit WindowId(MirWindow* window) : WindowId{mir_window_request_window_id_sync(window)} {}
+    operator MirRenderSurface*() const { return self.get(); }
 
-    auto c_str() const -> char const* { return mir_window_id_as_string(self.get()); }
+    void reset() { self.reset(); }
 
 private:
-    static void deleter(MirWindowId* id) { mir_window_id_release(id); }
-    std::shared_ptr<MirWindowId> self;
+    std::shared_ptr<MirRenderSurface> self;
 };
+
+// Provide a deleted overload to avoid double release "accidents".
+void mir_render_surface_release(Surface const& surface) = delete;
 }
 }
 
-#endif //MIR_CLIENT_WINDOW_ID_H
+#endif //MIRAL_SURFACE_H

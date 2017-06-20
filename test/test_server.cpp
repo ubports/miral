@@ -29,9 +29,7 @@
 #include <mir/server.h>
 #include <mir/version.h>
 
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 25, 0)
 #include <mir_test_framework/headless_display_buffer_compositor_factory.h>
-#endif
 
 #include <boost/throw_exception.hpp>
 
@@ -52,7 +50,6 @@ miral::TestServer::TestWindowManagerPolicy::TestWindowManagerPolicy(
     CanonicalWindowManagerPolicy{tools}
 {
     test_fixture.tools = tools;
-    test_fixture.policy = this;
 }
 
 miral::TestServer::TestServer() :
@@ -71,10 +68,6 @@ auto miral::TestServer::build_window_manager_policy(WindowManagerTools const& to
 
 void miral::TestServer::SetUp()
 {
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 25, 0)
-    mtf::set_next_preset_display({}); // Workaround for lp:1611337
-#endif
-
     mir::test::AutoJoinThread t([this]
          {
             auto init = [this](mir::Server& server)
@@ -93,23 +86,17 @@ void miral::TestServer::SetUp()
                                 });
                         });
 
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 25, 0)
                     server.override_the_display_buffer_compositor_factory([]
                         {
                             return std::make_shared<mtf::HeadlessDisplayBufferCompositorFactory>();
                         });
-#endif
 
                     server.override_the_window_manager_builder([this, &server](msh::FocusController* focus_controller)
                         -> std::shared_ptr<msh::WindowManager>
                         {
                             auto const display_layout = server.the_shell_display_layout();
 
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 24, 0)
                             auto const persistent_surface_store = server.the_persistent_surface_store();
-#else
-                            std::shared_ptr<mir::shell::PersistentSurfaceStore> const persistent_surface_store;
-#endif
 
                             auto builder = [this](WindowManagerTools const& tools) -> std::unique_ptr<miral::WindowManagementPolicy>
                                 {

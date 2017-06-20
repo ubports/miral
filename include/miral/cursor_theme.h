@@ -25,11 +25,11 @@ namespace mir { class Server; }
 
 namespace miral
 {
-/// Load a cursor theme
+/// Load an X-cursor theme, either the supplied default, or through the --cursor-theme config option
 class CursorTheme
 {
 public:
-    /// Specify a specific theme
+    /// Specify a default theme
     explicit CursorTheme(std::string const& theme);
     ~CursorTheme();
 

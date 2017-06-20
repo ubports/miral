@@ -16,7 +16,7 @@
  * Authored by: Alan Griffiths <alan@octopull.co.uk>
  */
 
-#include "titlebar_window_manager.h"
+#include "floating_window_manager.h"
 #include "decoration_provider.h"
 
 #include <miral/application_info.h>
@@ -46,7 +46,7 @@ inline PolicyData& policy_data_for(WindowInfo const& info)
 }
 }
 
-TitlebarWindowManagerPolicy::TitlebarWindowManagerPolicy(
+FloatingWindowManagerPolicy::FloatingWindowManagerPolicy(
     WindowManagerTools const& tools,
     SpinnerSplash const& spinner,
     miral::InternalClientLauncher const& launcher,
@@ -64,9 +64,9 @@ TitlebarWindowManagerPolicy::TitlebarWindowManagerPolicy(
     active_workspace = key_to_workspace[KEY_F1];
 }
 
-TitlebarWindowManagerPolicy::~TitlebarWindowManagerPolicy() = default;
+FloatingWindowManagerPolicy::~FloatingWindowManagerPolicy() = default;
 
-bool TitlebarWindowManagerPolicy::handle_pointer_event(MirPointerEvent const* event)
+bool FloatingWindowManagerPolicy::handle_pointer_event(MirPointerEvent const* event)
 {
     auto const action = mir_pointer_event_action(event);
     auto const modifiers = mir_pointer_event_modifiers(event) & modifier_mask;
@@ -137,7 +137,7 @@ bool TitlebarWindowManagerPolicy::handle_pointer_event(MirPointerEvent const* ev
     return consumes_event;
 }
 
-void TitlebarWindowManagerPolicy::end_resize()
+void FloatingWindowManagerPolicy::end_resize()
 {
     if (!resizing  && !pinching)
         return;
@@ -160,7 +160,7 @@ void TitlebarWindowManagerPolicy::end_resize()
     pinching = false;
 }
 
-bool TitlebarWindowManagerPolicy::handle_touch_event(MirTouchEvent const* event)
+bool FloatingWindowManagerPolicy::handle_touch_event(MirTouchEvent const* event)
 {
     auto const count = mir_touch_event_point_count(event);
 
@@ -281,7 +281,7 @@ bool TitlebarWindowManagerPolicy::handle_touch_event(MirTouchEvent const* event)
     return consumes_event;
 }
 
-void TitlebarWindowManagerPolicy::advise_new_window(WindowInfo const& window_info)
+void FloatingWindowManagerPolicy::advise_new_window(WindowInfo const& window_info)
 {
     CanonicalWindowManagerPolicy::advise_new_window(window_info);
 
@@ -306,7 +306,7 @@ void TitlebarWindowManagerPolicy::advise_new_window(WindowInfo const& window_inf
     }
 }
 
-void TitlebarWindowManagerPolicy::handle_window_ready(WindowInfo& window_info)
+void FloatingWindowManagerPolicy::handle_window_ready(WindowInfo& window_info)
 {
     if (window_info.window().application() != spinner.session() && window_info.needs_titlebar(window_info.type()))
         decoration_provider->create_titlebar_for(window_info.window());
@@ -314,14 +314,14 @@ void TitlebarWindowManagerPolicy::handle_window_ready(WindowInfo& window_info)
     CanonicalWindowManagerPolicy::handle_window_ready(window_info);
 }
 
-void TitlebarWindowManagerPolicy::advise_focus_lost(WindowInfo const& info)
+void FloatingWindowManagerPolicy::advise_focus_lost(WindowInfo const& info)
 {
     CanonicalWindowManagerPolicy::advise_focus_lost(info);
 
     decoration_provider->paint_titlebar_for(info, 0x3F);
 }
 
-void TitlebarWindowManagerPolicy::advise_focus_gained(WindowInfo const& info)
+void FloatingWindowManagerPolicy::advise_focus_gained(WindowInfo const& info)
 {
     CanonicalWindowManagerPolicy::advise_focus_gained(info);
 
@@ -337,28 +337,28 @@ void TitlebarWindowManagerPolicy::advise_focus_gained(WindowInfo const& info)
     }
 }
 
-void TitlebarWindowManagerPolicy::advise_state_change(WindowInfo const& window_info, MirWindowState state)
+void FloatingWindowManagerPolicy::advise_state_change(WindowInfo const& window_info, MirWindowState state)
 {
     CanonicalWindowManagerPolicy::advise_state_change(window_info, state);
 
     decoration_provider->advise_state_change(window_info, state);
 }
 
-void TitlebarWindowManagerPolicy::advise_resize(WindowInfo const& window_info, Size const& new_size)
+void FloatingWindowManagerPolicy::advise_resize(WindowInfo const& window_info, Size const& new_size)
 {
     CanonicalWindowManagerPolicy::advise_resize(window_info, new_size);
 
     decoration_provider->resize_titlebar_for(window_info, new_size);
 }
 
-void TitlebarWindowManagerPolicy::advise_delete_window(WindowInfo const& window_info)
+void FloatingWindowManagerPolicy::advise_delete_window(WindowInfo const& window_info)
 {
     CanonicalWindowManagerPolicy::advise_delete_window(window_info);
 
     decoration_provider->destroy_titlebar_for(window_info.window());
 }
 
-bool TitlebarWindowManagerPolicy::handle_keyboard_event(MirKeyboardEvent const* event)
+bool FloatingWindowManagerPolicy::handle_keyboard_event(MirKeyboardEvent const* event)
 {
     auto const action = mir_keyboard_event_action(event);
     auto const scan_code = mir_keyboard_event_scan_code(event);
@@ -514,7 +514,7 @@ bool TitlebarWindowManagerPolicy::handle_keyboard_event(MirKeyboardEvent const* 
     return false;
 }
 
-void TitlebarWindowManagerPolicy::toggle(MirWindowState state)
+void FloatingWindowManagerPolicy::toggle(MirWindowState state)
 {
     if (auto const window = tools.active_window())
     {
@@ -528,7 +528,7 @@ void TitlebarWindowManagerPolicy::toggle(MirWindowState state)
     }
 }
 
-bool TitlebarWindowManagerPolicy::resize(Window const& window, Point cursor, Point old_cursor)
+bool FloatingWindowManagerPolicy::resize(Window const& window, Point cursor, Point old_cursor)
 {
     if (!window)
         return false;
@@ -579,7 +579,7 @@ bool TitlebarWindowManagerPolicy::resize(Window const& window, Point cursor, Poi
     return true;
 }
 
-void TitlebarWindowManagerPolicy::keep_size_within_limits(
+void FloatingWindowManagerPolicy::keep_size_within_limits(
     WindowInfo const& window_info, Displacement& delta, Width& new_width, Height& new_height) const
 {
     auto const min_width  = std::max(window_info.min_width(), Width{5});
@@ -617,7 +617,7 @@ void TitlebarWindowManagerPolicy::keep_size_within_limits(
     }
 }
 
-WindowSpecification TitlebarWindowManagerPolicy::place_new_window(
+WindowSpecification FloatingWindowManagerPolicy::place_new_window(
     ApplicationInfo const& app_info, WindowSpecification const& request_parameters)
 {
     auto parameters = CanonicalWindowManagerPolicy::place_new_window(app_info, request_parameters);
@@ -634,7 +634,7 @@ WindowSpecification TitlebarWindowManagerPolicy::place_new_window(
     return parameters;
 }
 
-void TitlebarWindowManagerPolicy::advise_adding_to_workspace(
+void FloatingWindowManagerPolicy::advise_adding_to_workspace(
     std::shared_ptr<Workspace> const& workspace, std::vector<Window> const& windows)
 {
     if (windows.empty())
@@ -653,7 +653,7 @@ void TitlebarWindowManagerPolicy::advise_adding_to_workspace(
     }
 }
 
-void TitlebarWindowManagerPolicy::switch_workspace_to(
+void FloatingWindowManagerPolicy::switch_workspace_to(
     std::shared_ptr<Workspace> const& workspace,
     Window const& window)
 {
@@ -716,7 +716,7 @@ void TitlebarWindowManagerPolicy::switch_workspace_to(
     }
 }
 
-void TitlebarWindowManagerPolicy::apply_workspace_hidden_to(Window const& window)
+void FloatingWindowManagerPolicy::apply_workspace_hidden_to(Window const& window)
 {
     auto const& window_info = tools.info_for(window);
     auto& pdata = policy_data_for(window_info);
@@ -732,7 +732,7 @@ void TitlebarWindowManagerPolicy::apply_workspace_hidden_to(Window const& window
     }
 }
 
-void TitlebarWindowManagerPolicy::apply_workspace_visible_to(Window const& window)
+void FloatingWindowManagerPolicy::apply_workspace_visible_to(Window const& window)
 {
     auto const& window_info = tools.info_for(window);
     auto& pdata = policy_data_for(window_info);
@@ -746,7 +746,7 @@ void TitlebarWindowManagerPolicy::apply_workspace_visible_to(Window const& windo
     }
 }
 
-void TitlebarWindowManagerPolicy::handle_modify_window(WindowInfo& window_info, WindowSpecification const& modifications)
+void FloatingWindowManagerPolicy::handle_modify_window(WindowInfo& window_info, WindowSpecification const& modifications)
 {
     auto mods = modifications;
 
