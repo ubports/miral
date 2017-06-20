@@ -19,6 +19,7 @@
 #include "miral/cursor_theme.h"
 #include "xcursor_loader.h"
 
+#include <mir/options/option.h>
 #include <mir/server.h>
 #include <mir_toolkit/cursors.h>
 
@@ -43,8 +44,14 @@ miral::CursorTheme::~CursorTheme() = default;
 
 void miral::CursorTheme::operator()(mir::Server& server) const
 {
+    static char const* const option = "cursor-theme";
+
+    server.add_configuration_option(option, "Cursor theme (e.g. \"DMZ-Black\")", theme);
+
     server.override_the_cursor_images([&]
         {
+            auto const theme = server.get_options()->get<std::string const>(option);
+
             std::shared_ptr<mi::CursorImages> const xcursor_loader{std::make_shared<XCursorLoader>(theme)};
 
             if (has_default_cursor(*xcursor_loader))

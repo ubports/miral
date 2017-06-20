@@ -6,6 +6,7 @@ miral (1.4.0) UNRELEASED; urgency=medium
     - Enhancements:
       . Support for passing messages to enable Drag & Drop
       . Support for client requested move
+      . Added "--cursor-theme" option when configuring a cursor theme
     - Bugs fixed:
 
  -- Alan Griffiths <alan.griffiths@canonical.com>  Tue, 21 Mar 2017 17:57:20 +0000
