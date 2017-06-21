@@ -8,14 +8,14 @@ The main() program from miral-shell looks like this:
 
 \include shell_main.cpp
 
-This shell is providing TitlebarWindowManagerPolicy, TilingWindowManagerPolicy
+This shell is providing FloatingWindowManagerPolicy, TilingWindowManagerPolicy
 and SpinnerSplash. The rest is from MirAL.
 
 If you look for the corresponding code in lp:qtmir and lp:mir you’ll find it
 less clear, more verbose and scattered over multiple files.
 
 A shell has to provide a window management policy (miral-shell provides two: 
-TitlebarWindowManagerPolicy and TilingWindowManagerPolicy). A window management
+FloatingWindowManagerPolicy and TilingWindowManagerPolicy). A window management
 policy needs to implement the \ref miral::WindowManagementPolicy interface for
 handling a set of window management events.
 

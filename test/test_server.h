@@ -69,7 +69,6 @@ struct TestServer : testing::Test, private TestRuntimeEnvironment
 
 private:
     WindowManagerTools tools{nullptr};
-    WindowManagementPolicy* policy{nullptr};
     std::weak_ptr<mir::shell::WindowManager> window_manager;
     mir::test::AutoJoinThread server_thread;
     std::mutex mutex;

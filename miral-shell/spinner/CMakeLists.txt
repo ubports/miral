@@ -59,6 +59,7 @@ add_library(miral-spinner STATIC
 )
 
 target_link_libraries(miral-spinner
+  mirclientcpp
   EGL
   ${GLIB_LDFLAGS}
   ${GLESv2_LIBRARIES}

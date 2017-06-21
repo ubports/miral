@@ -18,6 +18,7 @@
 
 #include <miral/window_manager_tools.h>
 
+#include <mir/client/surface.h>
 #include <mir/client/window.h>
 #include <mir/client/window_spec.h>
 #include <mir_toolkit/mir_buffer_stream.h>
@@ -45,17 +46,26 @@ struct WindowProperties : public miral::TestServer
     {
         miral::TestServer::SetUp();
         client_connection = connect_client("WindowProperties");
+        surface = Surface{mir_connection_create_render_surface_sync(client_connection, 40, 40)};
     }
 
     void TearDown() override
     {
+        surface.reset();
         client_connection.reset();
         miral::TestServer::TearDown();
     }
 
     Connection client_connection;
+    Surface surface;
 
     std::unique_ptr<TestWindowManagerPolicy> build_window_manager_policy(WindowManagerTools const& tools) override;
+
+    void paint(Surface const& surface)
+    {
+        mir_buffer_stream_swap_buffers_sync(
+            mir_render_surface_get_buffer_stream(surface, 50, 50, mir_pixel_format_argb_8888));
+    }
 
     mir::test::Signal window_ready;
 };
@@ -80,12 +90,12 @@ auto WindowProperties::build_window_manager_policy(WindowManagerTools const& too
 
 TEST_F(WindowProperties, on_creation_default_shell_chrome_is_normal)
 {
-    auto const window = WindowSpec::for_normal_window(client_connection, 50, 50, mir_pixel_format_argb_8888)
-        .set_buffer_usage(mir_buffer_usage_software)
+    auto const window = WindowSpec::for_normal_window(client_connection, 50, 50)
         .set_name(a_window.c_str())
+        .add_surface(surface, 50, 50, 0, 0)
         .create_window();
 
-    mir_buffer_stream_swap_buffers_sync(mir_window_get_buffer_stream(window));
+    paint(surface);
     ASSERT_TRUE(window_ready.wait_for(400ms));
 
     invoke_tools([&, this](WindowManagerTools& tools)
@@ -96,13 +106,13 @@ TEST_F(WindowProperties, on_creation_default_shell_chrome_is_normal)
 
 TEST_F(WindowProperties, on_creation_client_setting_shell_chrome_low_is_seen_by_window_manager)
 {
-    auto const window = WindowSpec::for_normal_window(client_connection, 50, 50, mir_pixel_format_argb_8888)
-        .set_buffer_usage(mir_buffer_usage_software)
+    auto const window = WindowSpec::for_normal_window(client_connection, 50, 50)
         .set_name(a_window.c_str())
         .set_shell_chrome(mir_shell_chrome_low)
+        .add_surface(surface, 50, 50, 0, 0)
         .create_window();
 
-    mir_buffer_stream_swap_buffers_sync(mir_window_get_buffer_stream(window));
+    paint(surface);
     ASSERT_TRUE(window_ready.wait_for(400ms));
 
     invoke_tools([&, this](WindowManagerTools& tools)
@@ -113,16 +123,17 @@ TEST_F(WindowProperties, on_creation_client_setting_shell_chrome_low_is_seen_by_
 
 TEST_F(WindowProperties, after_creation_client_setting_shell_chrome_low_is_seen_by_window_manager)
 {
-    auto const window = WindowSpec::for_normal_window(client_connection, 50, 50, mir_pixel_format_argb_8888)
-        .set_buffer_usage(mir_buffer_usage_software)
+    auto const window = WindowSpec::for_normal_window(client_connection, 50, 50)
         .set_name(a_window.c_str())
+        .add_surface(surface, 50, 50, 0, 0)
         .create_window();
 
     WindowSpec::for_changes(client_connection)
         .set_shell_chrome(mir_shell_chrome_low)
         .apply_to(window);
 
-    mir_buffer_stream_swap_buffers_sync(mir_window_get_buffer_stream(window));
+    paint(surface);
+
     ASSERT_TRUE(window_ready.wait_for(400ms));
 
     invoke_tools([&, this](WindowManagerTools& tools)
@@ -133,17 +144,17 @@ TEST_F(WindowProperties, after_creation_client_setting_shell_chrome_low_is_seen_
 
 TEST_F(WindowProperties, after_creation_client_setting_shell_chrome_normal_is_seen_by_window_manager)
 {
-    auto const window = WindowSpec::for_normal_window(client_connection, 50, 50, mir_pixel_format_argb_8888)
-        .set_buffer_usage(mir_buffer_usage_software)
+    auto const window = WindowSpec::for_normal_window(client_connection, 50, 50)
         .set_name(a_window.c_str())
         .set_shell_chrome(mir_shell_chrome_low)
+        .add_surface(surface, 50, 50, 0, 0)
         .create_window();
 
     WindowSpec::for_changes(client_connection)
         .set_shell_chrome(mir_shell_chrome_normal)
         .apply_to(window);
 
-    mir_buffer_stream_swap_buffers_sync(mir_window_get_buffer_stream(window));
+    paint(surface);
     ASSERT_TRUE(window_ready.wait_for(400ms));
 
     invoke_tools([&, this](WindowManagerTools& tools)

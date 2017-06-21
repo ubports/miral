@@ -44,19 +44,18 @@ install(PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/miral-app
 add_executable(miral-shell
     shell_main.cpp
     tiling_window_manager.cpp   tiling_window_manager.h
-    titlebar_window_manager.cpp titlebar_window_manager.h
+        floating_window_manager.cpp floating_window_manager.h
     decoration_provider.cpp     decoration_provider.h
     titlebar_config.cpp         titlebar_config.h
 )
 
 pkg_check_modules(FREETYPE freetype2 REQUIRED)
-target_include_directories(miral-shell PUBLIC ${FREETYPE_INCLUDE_DIRS})
-target_compile_definitions(miral-shell PUBLIC -DTYPO_SUPPORTS_FREETYPE)
-target_link_libraries(miral-shell ${FREETYPE_LIBRARIES})
-
+target_include_directories(miral-shell PRIVATE ${FREETYPE_INCLUDE_DIRS})
+target_compile_definitions(miral-shell PRIVATE -DTYPO_SUPPORTS_FREETYPE)
 target_link_libraries(miral-shell
     miral-spinner
     miral
+    ${FREETYPE_LIBRARIES}
 )
 
 install(TARGETS miral-shell

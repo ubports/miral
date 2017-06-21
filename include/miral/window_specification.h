@@ -21,8 +21,6 @@
 
 #include <mir_toolkit/common.h>
 
-#include <mir/client/detail/mir_forward_compatibility.h>
-
 #include <mir/geometry/displacement.h>
 #include <mir/geometry/rectangles.h>
 #include <mir/optional_value.h>

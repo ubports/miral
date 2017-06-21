@@ -23,6 +23,7 @@
 #include <miral/window_manager_tools.h>
 
 #include <mir/client/connection.h>
+#include <mir/client/surface.h>
 #include <mir/client/window.h>
 
 #include <mir/geometry/rectangle.h>
@@ -81,6 +82,9 @@ public:
 private:
     struct Data
     {
+        MirConnection* connection{nullptr};
+        mir::client::Surface surface;
+        MirBufferStream* stream{nullptr};
         std::atomic<MirWindow*> titlebar{nullptr};
         std::atomic<int> intensity{0xff};
         std::function<void(MirWindow* surface)> on_create{[](MirWindow*){}};
@@ -95,7 +99,8 @@ private:
     miral::WindowManagerTools tools;
     std::mutex mutable mutex;
     mir::client::Connection connection;
-    std::vector<mir::client::Window> wallpaper;
+    struct Wallpaper { mir::client::Surface surface; mir::client::Window window; MirBufferStream* stream; };
+    std::vector<Wallpaper> wallpaper;
     std::weak_ptr<mir::scene::Session> weak_session;
 
     SurfaceMap window_to_titlebar;
@@ -105,6 +110,7 @@ private:
     Data* find_titlebar_data(miral::Window const& window);
     miral::Window find_titlebar_window(miral::Window const& window) const;
     void repaint_titlebar_for(miral::WindowInfo const& window_info);
+    static void handle_event(MirWindow* window, MirEvent const* ev, void* context_);
 };
 
 

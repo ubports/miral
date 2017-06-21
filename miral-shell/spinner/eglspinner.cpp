@@ -34,6 +34,8 @@
 #include <atomic>
 #include <mutex>
 
+#include <mir_toolkit/mir_client_library.h>
+
 #include "spinner_glow.h"
 #include "spinner_logo.h"
 

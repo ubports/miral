@@ -6,7 +6,7 @@
  * as published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * but WITHOUT ANY WARRANTY; without even the implied warranty ofb
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
@@ -16,8 +16,8 @@
  * Authored by: Alan Griffiths <alan@octopull.co.uk>
  */
 
-#ifndef MIRAL_SHELL_TITLEBAR_WINDOW_MANAGER_H
-#define MIRAL_SHELL_TITLEBAR_WINDOW_MANAGER_H
+#ifndef MIRAL_SHELL_FLOATING_WINDOW_MANAGER_H
+#define MIRAL_SHELL_FLOATING_WINDOW_MANAGER_H
 
 #include <miral/canonical_window_manager.h>
 #include <miral/workspace_policy.h>
@@ -33,15 +33,15 @@ using namespace mir::geometry;
 
 class DecorationProvider;
 
-class TitlebarWindowManagerPolicy : public miral::CanonicalWindowManagerPolicy, miral::WorkspacePolicy
+class FloatingWindowManagerPolicy : public miral::CanonicalWindowManagerPolicy, miral::WorkspacePolicy
 {
 public:
-    TitlebarWindowManagerPolicy(
+    FloatingWindowManagerPolicy(
         miral::WindowManagerTools const& tools,
         SpinnerSplash const& spinner,
         miral::InternalClientLauncher const& launcher,
         std::function<void()>& shutdown_hook);
-    ~TitlebarWindowManagerPolicy();
+    ~FloatingWindowManagerPolicy();
 
     virtual miral::WindowSpecification place_new_window(
         miral::ApplicationInfo const& app_info, miral::WindowSpecification const& request_parameters) override;
@@ -133,4 +133,4 @@ private:
     void apply_workspace_hidden_to(miral::Window const& window);
 };
 
-#endif //MIRAL_SHELL_TITLEBAR_WINDOW_MANAGER_H
+#endif //MIRAL_SHELL_FLOATING_WINDOW_MANAGER_H

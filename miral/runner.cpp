@@ -30,10 +30,6 @@
 #include <mutex>
 #include <thread>
 
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 24, 0)
-#include <csignal>
-#endif
-
 namespace
 {
 inline auto filename(std::string path) -> std::string
@@ -198,9 +194,7 @@ try
         for (auto& option : options)
             option(*server);
 
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 24, 0)
         server->add_stop_callback(stop_callback);
-#endif
 
         // Provide the command line and run the server
         server->set_command_line(argc, argv);
@@ -219,10 +213,6 @@ try
         // ensuring that the server has really and fully started.
         auto const main_loop = server->the_main_loop();
         main_loop->enqueue(this, start_callback);
-
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 24, 0)
-        main_loop->register_signal_handler({SIGINT, SIGTERM}, [this](int) {stop_callback();});
-#endif
 
         server->run();
     }
@@ -282,11 +272,6 @@ void miral::MirRunner::stop()
 
     if (auto const server = self->weak_server.lock())
     {
-#if MIR_SERVER_VERSION < MIR_VERSION_NUMBER(0, 24, 0)
-        // Before Mir-0.24 we can't intercept all stop() invocations,
-        // but we can deal with the ones we pass on
-        self->stop_callback();
-#endif
         server->stop();
     }
 }

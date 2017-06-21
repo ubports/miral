@@ -42,14 +42,13 @@ struct WindowId : public miral::TestServer
     }
 };
 
-#if MIR_SERVER_VERSION >= MIR_VERSION_NUMBER(0, 24, 0)
 TEST_F(WindowId, server_can_identify_window_specified_by_client)
 {
     char const* const test_name = __PRETTY_FUNCTION__;
     using namespace mir::client;
 
     auto const connection = connect_client(test_name);
-    auto const spec = WindowSpec::for_normal_window(connection, 50, 50, mir_pixel_format_argb_8888)
+    auto const spec = WindowSpec::for_normal_window(connection, 50, 50)
         .set_name(test_name);
 
     Window const surface{spec.create_window()};
@@ -71,7 +70,7 @@ TEST_F(WindowId, server_returns_correct_id_for_window)
     using namespace mir::client;
 
     auto const connection = connect_client(test_name);
-    auto const spec = WindowSpec::for_normal_window(connection, 50, 50, mir_pixel_format_argb_8888)
+    auto const spec = WindowSpec::for_normal_window(connection, 50, 50)
         .set_name(test_name);
 
     Window const surface{spec.create_window()};
@@ -86,46 +85,6 @@ TEST_F(WindowId, server_returns_correct_id_for_window)
             ASSERT_THAT(client_surface_id.c_str(), Eq(id));
         });
 }
-#else
-TEST_F(WindowId, server_fails_gracefully_to_identify_window_specified_by_client)
-{
-    char const* const test_name = __PRETTY_FUNCTION__;
-    using namespace mir::client;
-
-    auto const connection = connect_client(test_name);
-    auto const spec = WindowSpec::for_normal_window(connection, 50, 50, mir_pixel_format_argb_8888)
-        .set_name(test_name);
-
-    Window const surface{spec.create_window()};
-
-    mir::client::WindowId client_surface_id{surface};
-
-    invoke_tools([&](miral::WindowManagerTools& tools)
-        {
-            EXPECT_THROW(tools.info_for_window_id(client_surface_id.c_str()), std::runtime_error);
-        });
-}
-
-TEST_F(WindowId, server_fails_gracefully_to_return_id_for_window)
-{
-    char const* const test_name = __PRETTY_FUNCTION__;
-    using namespace mir::client;
-
-    auto const connection = connect_client(test_name);
-    auto const spec = WindowSpec::for_normal_window(connection, 50, 50, mir_pixel_format_argb_8888)
-        .set_name(test_name);
-
-    Window const surface{spec.create_window()};
-
-    mir::client::WindowId client_surface_id{surface};
-
-    invoke_tools([&](miral::WindowManagerTools& tools)
-        {
-            auto window = get_first_window(tools);
-            EXPECT_THROW(tools.id_for_window(window), std::runtime_error);
-        });
-}
-#endif
 
 TEST_F(WindowId, server_fails_gracefully_to_identify_window_from_garbage_id)
 {
@@ -133,8 +92,7 @@ TEST_F(WindowId, server_fails_gracefully_to_identify_window_from_garbage_id)
     using namespace mir::client;
 
     auto const connection = connect_client(test_name);
-    auto const spec = WindowSpec::for_normal_window(connection, 50, 50, mir_pixel_format_argb_8888)
-        .set_name(test_name);
+    auto const spec = WindowSpec::for_normal_window(connection, 50, 50).set_name(test_name);
 
     Window const surface{spec.create_window()};
 

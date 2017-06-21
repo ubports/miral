@@ -15,21 +15,22 @@
  */
 
 #include "miregl.h"
+#include <miral/window_specification.h>
 #include <mir/client/window_spec.h>
-#include <mir_toolkit/version.h>
+#include <mir_toolkit/mir_client_library.h>
 
 #include <cstring>
 
 #include <GLES2/gl2.h>
-#include <miral/window_specification.h>
-#include <mir/client/window_spec.h>
+
+using namespace mir::client;
 
 class MirEglApp
 {
 public:
     MirEglApp(MirConnection* const connection, MirPixelFormat pixel_format);
 
-    EGLSurface create_surface(MirWindow* window);
+    EGLSurface create_surface(MirRenderSurface* surface);
 
     void make_current(EGLSurface eglsurface) const;
 
@@ -60,47 +61,37 @@ std::shared_ptr<MirEglApp> make_mir_eglapp(
     return std::make_shared<MirEglApp>(connection, pixel_format);
 }
 
-namespace
+MirEglSurface::MirEglSurface(
+    std::shared_ptr<MirEglApp> const& mir_egl_app,
+    char const* name,
+    MirOutput const* output)
+:
+    mir_egl_app{mir_egl_app}
 {
-MirWindow* create_window(MirConnection* const connection, MirWindowParameters const& parameters)
-{
+    auto const mode = mir_output_get_current_mode(output);
+    auto const output_id = mir_output_get_id(output);
+    auto const width = mir_output_mode_get_width(mode);
+    auto const height = mir_output_mode_get_height(mode);
 
-    auto spec = mir::client::WindowSpec::for_normal_window(
-        connection, parameters.width, parameters.height, parameters.pixel_format)
-        .set_name(parameters.name)
-        .set_buffer_usage(parameters.buffer_usage);
+    surface = Surface{mir_connection_create_render_surface_sync(mir_egl_app->connection, width, height)};
 
+    eglsurface = mir_egl_app->create_surface(surface);
 
-    if (!parameters.width && !parameters.height)
-        spec.set_fullscreen_on_output(parameters.output_id);
-
-    auto const window = mir_create_window_sync(spec);
+    window = WindowSpec::for_normal_window(mir_egl_app->connection, width, height)
+        .add_surface(surface, width, height, 0, 0)
+        .set_name(name)
+        .set_fullscreen_on_output(output_id)
+        .create_window();
 
     if (!mir_window_is_valid(window))
         throw std::runtime_error(std::string("Can't create a window ") + mir_window_get_error_message(window));
 
-    if (parameters.output_id != mir_display_output_id_invalid)
-        mir_window_set_state(window, mir_window_state_fullscreen);
-
-    return window;
-}
-}
-
-MirEglSurface::MirEglSurface(
-    std::shared_ptr<MirEglApp> const& mir_egl_app, MirWindowParameters const& parm, int swapinterval) :
-    mir_egl_app{mir_egl_app},
-    window{create_window(mir_egl_app->connection, parm)},
-    eglsurface{mir_egl_app->create_surface(window)},
-    width_{0},
-    height_{0}
-{
-    mir_egl_app->set_swap_interval(eglsurface, swapinterval);
+    mir_egl_app->set_swap_interval(eglsurface, -1);
 }
 
 MirEglSurface::~MirEglSurface()
 {
     mir_egl_app->destroy_surface(eglsurface);
-    mir_window_release_sync(window);
 }
 
 void MirEglSurface::egl_make_current()
@@ -139,7 +130,7 @@ MirEglApp::MirEglApp(MirConnection* const connection, MirPixelFormat pixel_forma
             EGL_NONE
         };
 
-    egldisplay = eglGetDisplay((EGLNativeDisplayType) mir_connection_get_egl_native_display(connection));
+    egldisplay = eglGetDisplay((EGLNativeDisplayType)(connection));
     if (egldisplay == EGL_NO_DISPLAY)
         throw std::runtime_error("Can't eglGetDisplay");
 
@@ -184,12 +175,12 @@ MirEglApp::MirEglApp(MirConnection* const connection, MirPixelFormat pixel_forma
     make_current(dummy_surface);
 }
 
-EGLSurface MirEglApp::create_surface(MirWindow* window)
+EGLSurface MirEglApp::create_surface(MirRenderSurface* surface)
 {
     auto const eglsurface = eglCreateWindowSurface(
         egldisplay,
         eglconfig,
-        (EGLNativeWindowType) mir_buffer_stream_get_egl_native_window(mir_window_get_buffer_stream(window)), NULL);
+        (EGLNativeWindowType)surface, NULL);
 
     if (eglsurface == EGL_NO_SURFACE)
         throw std::runtime_error("eglCreateWindowSurface failed");
